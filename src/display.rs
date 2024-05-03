@@ -9,7 +9,7 @@ use crate::{hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_P
 
 static DEFAULT_HANOI_APP: Lazy<HanoiApp> = Lazy::new(|| {
     let mut hanoi_app = HanoiApp::default();
-    hanoi_app.hanoi.reset();
+    hanoi_app.soft_reset();
     hanoi_app
 });
 
@@ -126,27 +126,20 @@ impl HanoiApp {
         ui.label("There is no high score for these settings.");
 
         let required_moves = self.hanoi.required_moves();
-        let infinity_tup = ("∞".to_string(), "∞".to_string());
-        let (expert_time_string, computer_time_string) = match required_moves {
-            RequiredMoves::Impossible => infinity_tup,
+        let infinity = ["∞".to_string(), "∞".to_string()];
+        let [expert_time_string, computer_time_string] = match required_moves {
+            RequiredMoves::Impossible => infinity,
             RequiredMoves::Count(moves) => {
-                let expert_seconds = (moves - 1) as f64 / 3.0;
-                let computer_seconds = (moves - 1) as f64 / 50000000.0;
-                if expert_seconds >= Duration::MAX.as_secs_f64() {
-                    infinity_tup
+                let moves = (moves - 1) as f64;
+                let times = [
+                    moves / 3.0,
+                    moves / 50000000.0,
+                ];
+                if times[0] > Duration::MAX.as_secs_f64() {
+                    infinity
                 } else {
-                    (
-                        pretty_duration(
-                            &Duration::from_secs_f64(expert_seconds),
-                            None,
-                        ),
-                        pretty_duration(
-                            &Duration::from_secs_f64(computer_seconds),
-                            None,
-                        ),
-                    )
+                    times.map(|secs| pretty_duration(&Duration::from_secs_f64(secs), None))
                 }
-
             }
         };
 
@@ -162,7 +155,12 @@ impl HanoiApp {
         ui.label(match self.state {
             GameState::Reset => "Not started".to_string(),
             GameState::Playing => format!("{:.3?} seconds", self.start.elapsed().as_secs_f64()),
-            GameState::Finished(end) => format!("{:.3?} seconds", end.duration_since(self.start).as_secs_f64()),
+            GameState::Finished(end) => {
+                let duration = end.duration_since(self.start);
+                let seconds = duration.as_secs_f64();
+                let small_time = if seconds < 0.001 { format!("({:?})", duration) } else { "".to_string() };
+                format!("{seconds:.3?} seconds {small_time}")
+            },
         });
         ui.label(format!("Moves: {}/{} optimal", self.moves, self.hanoi.required_moves()));
     }

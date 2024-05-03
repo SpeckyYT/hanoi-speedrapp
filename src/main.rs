@@ -126,13 +126,12 @@ impl HanoiApp {
                 ($($k:ident: $f:literal => $t:literal)*) => {
                     $(
                         if i.key_pressed(Key::$k) {
-                            if self.state == GameState::Reset {
-                                self.state = GameState::Playing;
-                                self.start = Instant::now();
-                                self.moves = 0;
-                            }
-                            if self.state == GameState::Playing {
+                            if !matches!(self.state, GameState::Finished(_)) {
                                 if self.hanoi.shift($f - 1, $t - 1) {
+                                    if self.state == GameState::Reset {
+                                        self.state = GameState::Playing;
+                                        self.start = Instant::now();
+                                    }
                                     self.moves += 1;
                                 }
                             }
@@ -193,10 +192,6 @@ impl App for HanoiApp {
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut Frame) {
         self.check_extra_mode(ctx);
-
-        if self.state == GameState::Reset {
-            self.hanoi.reset();
-        }
 
         match self.player {
             PlayerKind::Human => self.player_play(ctx),
