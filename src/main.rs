@@ -1,27 +1,37 @@
 use std::time::Instant;
 
-use eframe::{egui::{self, CentralPanel, Key, Modifiers}, App, HardwareAcceleration, NativeOptions};
+use eframe::{egui::{self, CentralPanel, Key, Modifiers}, App, Frame, HardwareAcceleration, NativeOptions};
+use serde::{Deserialize, Serialize};
+use strum::EnumIter;
 use hanoi::HanoiGame;
 
 mod hanoi;
 mod display;
 
-fn main() {
-    HanoiApp::run().unwrap();
+const APP_NAME: &str = "Towers of Hanoi - Speedrapp Edition";
+
+fn main() -> Result<(), eframe::Error> {
+    HanoiApp::run()
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 enum GameState {
     Playing,
+    #[serde(skip)]
     Finished(Instant),
     Reset,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+fn default_instant() -> Instant {
+    Instant::now()
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 struct HanoiApp {
     hanoi: HanoiGame,
     player: PlayerKind,
     state: GameState,
+    #[serde(skip, default = "default_instant")]
     start: Instant,
     moves: u128,
 
@@ -29,6 +39,8 @@ struct HanoiApp {
     blindfold: bool,
     show_poles: bool,
     disk_number: bool,
+    color_theme: ColorTheme,
+    poles_position: PolesPosition,
 
     // other
     extra_mode: bool,
@@ -46,6 +58,8 @@ impl Default for HanoiApp {
             blindfold: false,
             show_poles: true,
             disk_number: false,
+            color_theme: ColorTheme::Rainbow,
+            poles_position: PolesPosition::Bottom,
 
             extra_mode: false,
         }
@@ -57,20 +71,31 @@ impl HanoiApp {
         let options = NativeOptions {
             hardware_acceleration: HardwareAcceleration::Preferred,
             vsync: false,
-            
+            persist_window: true,
+
             ..Default::default()
         };
 
         eframe::run_native(
-            "Towers of Hanoi - Speedrapp Edition",
+            APP_NAME,
             options,
             Box::new(Self::load),
         )
     }
-    fn load(_ctx: &eframe::CreationContext) -> Box<dyn eframe::App> {
-        Box::new(Self {
-            ..Default::default()
+    fn load(cc: &eframe::CreationContext) -> Box<dyn eframe::App> {
+        Box::new(if let Some(storage) = cc.storage {
+            let mut app = eframe::get_value::<HanoiApp>(storage, eframe::APP_KEY).unwrap_or_default();
+            app.soft_reset();
+            app
+        } else {
+            HanoiApp::default()
         })
+    }
+
+    pub fn soft_reset(&mut self) {
+        self.hanoi.reset();
+        self.state = GameState::Reset;
+        self.moves = 0;
     }
 
     pub fn equal_settings(&self, other: &Self) -> bool {
@@ -126,9 +151,7 @@ impl HanoiApp {
             );
 
             if i.key_pressed(Key::R) {
-                self.hanoi.reset();
-                self.state = GameState::Reset;
-                self.moves = 0;
+                self.soft_reset();
             }
         });
 
@@ -164,7 +187,11 @@ impl HanoiApp {
 }
 
 impl App for HanoiApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        eframe::set_value(storage, eframe::APP_KEY, self);
+    }
+
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut Frame) {
         self.check_extra_mode(ctx);
 
         if self.state == GameState::Reset {
@@ -199,8 +226,20 @@ impl App for HanoiApp {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
 enum PlayerKind {
     Human,
     Bot,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
+enum ColorTheme {
+    Rainbow,
+    Purple,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
+enum PolesPosition {
+    Bottom,
+    Top,
 }

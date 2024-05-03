@@ -1,16 +1,29 @@
-use std::time::{Duration, Instant};
+use std::{fmt::Debug, time::{Duration, Instant}};
 
-use eframe::egui::{self, Color32, ComboBox, SidePanel, Slider};
+use eframe::{egui::{self, Align, Align2, Color32, ComboBox, Direction, FontId, Layout, Sense, SidePanel, Slider, Ui, Vec2}, epaint::Hsva};
 use once_cell::sync::Lazy;
 use pretty_duration::pretty_duration;
+use strum::IntoEnumIterator;
 
-use crate::{hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, GameState, HanoiApp, PlayerKind};
+use crate::{hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, ColorTheme, GameState, HanoiApp, PolesPosition};
 
 static DEFAULT_HANOI_APP: Lazy<HanoiApp> = Lazy::new(|| {
     let mut hanoi_app = HanoiApp::default();
     hanoi_app.hanoi.reset();
     hanoi_app
 });
+
+macro_rules! check_changed {
+    ($action:expr; $($resp:expr;)*) => {
+        if [$(
+            $resp.changed,
+        )*]
+        .iter()
+        .any(|&v| v) {
+            $action;
+        };
+    };
+}
 
 impl HanoiApp {
     pub fn draw_blindfold(&self, ctx: &egui::Context) {
@@ -24,14 +37,42 @@ impl HanoiApp {
         for i in (0..self.hanoi.poles_count).rev() {
             SidePanel::right(format!("tower_{i}"))
             .show(ctx, |ui| {
-                if self.blindfold {
-                    ui.label("[blindfold enabled]");
-                } else {
-                    for j in 0..self.hanoi.poles[i].len() {
-                        let disk = self.hanoi.poles[i][j];
-                        ui.label(disk.to_string());
+                ui.with_layout(
+                    Layout::from_main_dir_and_cross_align(
+                        match self.poles_position {
+                            PolesPosition::Bottom => Direction::BottomUp,
+                            PolesPosition::Top => Direction::TopDown,
+                        },
+                        Align::Center,
+                    ),
+                    |ui| {
+                        for j in 0..self.hanoi.poles[i].len() {
+                            let disk_number = self.hanoi.poles[i][j];
+                            let width = 20.0 + 10.0 * disk_number as f32;
+                            let height = 20.0;
+                            let size = Vec2::new(width, height);
+                            let (response, painter) = ui.allocate_painter(size, Sense::click_and_drag());
+                            let color = match self.color_theme {
+                                ColorTheme::Rainbow => {
+                                    let hsv = Hsva::new(disk_number as f32 / self.hanoi.disks_count as f32, 1.0, 1.0, 1.0);
+                                    let [ r, g, b ] = hsv.to_srgb();
+                                    Color32::from_rgb(r, g, b)
+                                },
+                                ColorTheme::Purple => {
+                                    if disk_number % 2 == 0 {
+                                        Color32::from_rgb(212, 156, 234)
+                                    } else {
+                                        Color32::from_rgb(134, 88, 154)
+                                    }
+                                },
+                            };
+                            painter.rect_filled(response.rect, height / 2.0, color);
+                            if self.disk_number {
+                                painter.text(response.rect.center(), Align2::CENTER_CENTER, disk_number.to_string(), FontId::monospace(height / 1.5), Color32::BLACK);
+                            }
+                        }
                     }
-                }
+                );
             });
         }
     }
@@ -43,9 +84,18 @@ impl HanoiApp {
         let max_poles = if self.extra_mode { MAX_POLES } else { MAX_POLES_NORMAL };
 
         ui.add_enabled_ui(self.state != GameState::Playing, |ui| {
-            ui.add(Slider::new(&mut self.hanoi.disks_count, 1..=max_disks).text("Disks"));
-            ui.add(Slider::new(&mut self.hanoi.poles_count, 2..=max_poles).text("Poles"));
-            ui.add(Slider::new(&mut self.hanoi.start_pole, 1..=self.hanoi.poles_count).text("Start pole"));
+            check_changed!(
+                self.soft_reset();
+                ui.add(Slider::new(&mut self.hanoi.disks_count, 1..=max_disks).text("Disks"));
+                {
+                    let resp = ui.add(Slider::new(&mut self.hanoi.poles_count, 2..=max_poles).text("Poles"));
+                    if resp.changed {
+                        self.hanoi.start_pole = self.hanoi.start_pole.min(self.hanoi.poles_count);
+                    }
+                    resp
+                };
+                ui.add(Slider::new(&mut self.hanoi.start_pole, 1..=self.hanoi.poles_count).text("Start pole"));
+            );
 
             let mut any_pole = self.hanoi.end_pole.is_none();
             ui.checkbox(&mut any_pole, "Any end pole");
@@ -54,7 +104,7 @@ impl HanoiApp {
             } else {
                 let end_pole = self.hanoi.end_pole.get_or_insert(1);
                 ui.add(Slider::new(end_pole, 1..=self.hanoi.poles_count).text("End pole"));
-            }
+            };
 
             ui.checkbox(&mut self.hanoi.illegal_moves, "Illegal moves");
             ui.checkbox(&mut self.blindfold, "Blindfold");
@@ -62,15 +112,9 @@ impl HanoiApp {
         ui.checkbox(&mut self.show_poles, "Show poles");
         ui.checkbox(&mut self.disk_number, "Disk number");
 
-        ComboBox::new("player_select", "Player select")
-        .selected_text(match self.player {
-            PlayerKind::Human => "Human",
-            PlayerKind::Bot => "Bot",
-        })
-        .show_ui(ui, |ui| {
-            ui.selectable_value(&mut self.player, PlayerKind::Human, "Human");
-            ui.selectable_value(&mut self.player, PlayerKind::Bot, "Bot");
-        });
+        set_enum_setting(ui, &mut self.player);
+        set_enum_setting(ui, &mut self.color_theme);
+        set_enum_setting(ui, &mut self.poles_position);
 
         ui.add_enabled_ui((self.state != GameState::Playing) && !self.equal_settings(&DEFAULT_HANOI_APP), |ui| {
             if ui.button("Default Settings").clicked() {
@@ -146,4 +190,18 @@ impl HanoiApp {
         ui.label("Your best time: idk");
         ui.label("High score difference: idk");
     }
+}
+
+fn set_enum_setting<T>(ui: &mut Ui, selected: &mut T)
+where
+    T: IntoEnumIterator + PartialEq + Copy + Debug + 'static,
+{
+    let type_string = std::any::type_name::<T>();
+    ComboBox::from_label(type_string.split("::").nth(1).unwrap_or(type_string))
+        .selected_text(format!("{:?}", selected))
+        .show_ui(ui, |ui| {
+            for mode in T::iter() {
+                ui.selectable_value(selected, mode, format!("{:?}", mode));
+            }
+        });
 }

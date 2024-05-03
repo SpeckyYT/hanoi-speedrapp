@@ -7,8 +7,9 @@ pub const MAX_POLES_NORMAL: usize = 9;
 use std::fmt::Display;
 
 use arrayvec::ArrayVec;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HanoiGame {
     pub poles: [ArrayVec<usize, MAX_DISKS>; MAX_POLES],
     pub poles_count: usize,
