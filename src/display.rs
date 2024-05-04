@@ -1,6 +1,6 @@
 use std::{fmt::Debug, time::Duration};
 
-use eframe::{egui::{self, Align, Align2, Color32, ComboBox, Direction, FontId, Layout, Sense, SidePanel, Slider, Ui, Vec2}, epaint::Hsva};
+use eframe::{egui::{self, Align, Align2, Color32, ComboBox, Direction, FontId, Layout, RichText, Sense, SidePanel, Slider, Ui, Vec2}, epaint::Hsva};
 use once_cell::sync::Lazy;
 use pretty_duration::pretty_duration;
 use strum::IntoEnumIterator;
@@ -66,7 +66,7 @@ impl HanoiApp {
                                     }
                                 },
                             };
-                            painter.rect_filled(response.rect, height / 2.0, color);
+                            painter.rect_filled(response.rect, height / 2.5, color);
                             if self.disk_number {
                                 painter.text(response.rect.center(), Align2::CENTER_CENTER, disk_number.to_string(), FontId::monospace(height / 1.5), Color32::BLACK);
                             }
@@ -122,8 +122,12 @@ impl HanoiApp {
             }
         });
 
-        // TODO:
-        ui.label("There is no high score for these settings.");
+        let highscore = self.get_highscores_entry(self.get_current_header()).first();
+        if let Some(highscore) = highscore {
+            ui.label(format!("Your high score for these settings: {:.3?} seconds", highscore.time.as_secs_f64()));
+        } else {
+            ui.label("There is no high score for these settings.");
+        }
 
         let required_moves = self.hanoi.required_moves();
         let infinity = ["∞".to_string(), "∞".to_string()];
@@ -186,8 +190,14 @@ impl HanoiApp {
             ));
         }
 
-        ui.label("Your best time: idk");
-        ui.label("High score difference: idk");
+        if let Some(highscore) = self.get_highscores_entry(self.get_current_header()).first() {
+            ui.label(format!("Your best time: {:.3?} seconds", highscore.time.as_secs_f64()));
+            if duration > highscore.time {
+                ui.label(format!("High score difference: +{:.3?} seconds", (duration - highscore.time).as_secs_f64()));
+            } else {
+                ui.label(RichText::new("New high score!").color(Color32::from_rgb(0xFF, 0xA5, 0x00)));
+            }
+        }
     }
 }
 

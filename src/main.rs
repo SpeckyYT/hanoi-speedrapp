@@ -1,12 +1,14 @@
 use std::time::{Duration, Instant};
 
 use eframe::{egui::{self, CentralPanel, Key, Modifiers}, App, Frame, HardwareAcceleration, NativeOptions};
+use highscores::Highscores;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 use hanoi::HanoiGame;
 
 mod hanoi;
 mod display;
+mod highscores;
 
 const APP_NAME: &str = "Towers of Hanoi - Speedrapp Edition";
 
@@ -38,6 +40,8 @@ struct HanoiApp {
 
     // other
     extra_mode: bool,
+
+    highscores: Highscores,
 }
 
 impl Default for HanoiApp {
@@ -55,6 +59,8 @@ impl Default for HanoiApp {
             poles_position: PolesPosition::Bottom,
 
             extra_mode: false,
+
+            highscores: Default::default(),
         }
     }
 }
@@ -125,6 +131,9 @@ impl HanoiApp {
                                         self.state = GameState::Playing(Instant::now());
                                     }
                                     self.moves += 1;
+                                    if let GameState::Playing(time) = self.state {
+                                        self.hanoi.moves_history.push((time.elapsed(), $f - 1, $t - 1));
+                                    }
                                 }
                             }
                         }
@@ -149,6 +158,7 @@ impl HanoiApp {
         match self.state {
             GameState::Playing(start) if self.hanoi.finished() => {
                 self.state = GameState::Finished(start.elapsed());
+                self.save_score();
             },
             _ => {},
         }
@@ -208,6 +218,7 @@ impl App for HanoiApp {
                 ui.separator();
                 self.draw_completed(ui, end);
             }
+            ui.separator();
         });
 
         if matches!(self.state, GameState::Playing(_)) {

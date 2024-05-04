@@ -9,6 +9,8 @@ use std::fmt::Display;
 use arrayvec::ArrayVec;
 use serde::{Deserialize, Serialize};
 
+use crate::highscores::Move;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HanoiGame {
     pub poles: [ArrayVec<usize, MAX_DISKS>; MAX_POLES],
@@ -17,6 +19,7 @@ pub struct HanoiGame {
     pub start_pole: usize,
     pub end_pole: Option<usize>,
     pub illegal_moves: bool,
+    pub moves_history: Vec<Move>
 }
 
 impl HanoiGame {
@@ -29,6 +32,8 @@ impl HanoiGame {
             start_pole: 1,
             end_pole: None,
             illegal_moves: false,
+
+            moves_history: Vec::with_capacity(1024),
         };
         hanoi.reset();
         hanoi
@@ -44,6 +49,7 @@ impl HanoiGame {
         false
     }
     pub fn reset(&mut self) {
+        self.moves_history.clear();
         self.poles = Default::default();
 
         for i in (1..=self.disks_count).rev() {
