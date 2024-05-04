@@ -5,7 +5,6 @@ repository = "https://github.com/SpeckyYT/hanoi-speedrapp"
 version = "0.1.0"
 edition = "2021"
 license = "AGPL-3.0-or-later"
-license-file = "LICENSE"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

@@ -3,9 +3,10 @@ use std::{fmt::Debug, time::Duration};
 use eframe::{egui::{self, Align, Align2, Color32, ComboBox, Direction, FontId, Layout, RichText, Sense, SidePanel, Slider, Ui, Vec2}, epaint::Hsva};
 use once_cell::sync::Lazy;
 use pretty_duration::pretty_duration;
-use strum::IntoEnumIterator;
+use serde::{Deserialize, Serialize};
+use strum::{EnumIter, IntoEnumIterator};
 
-use crate::{hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, ColorTheme, GameState, HanoiApp, PolesPosition};
+use crate::{hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, GameState, HanoiApp};
 
 const TOWERS_PANEL_ID: &str = "towers";
 
@@ -14,6 +15,18 @@ static DEFAULT_HANOI_APP: Lazy<HanoiApp> = Lazy::new(|| {
     hanoi_app.soft_reset();
     hanoi_app
 });
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
+pub enum ColorTheme {
+    Rainbow,
+    Purple,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
+pub enum PolesPosition {
+    Bottom,
+    Top,
+}
 
 macro_rules! check_changed {
     ($action:expr; $($resp:expr;)*) => {
@@ -210,7 +223,7 @@ where
     T: IntoEnumIterator + PartialEq + Copy + Debug + 'static,
 {
     let type_string = std::any::type_name::<T>();
-    ComboBox::from_label(type_string.split("::").nth(1).unwrap_or(type_string))
+    ComboBox::from_label(type_string.split("::").last().unwrap_or(type_string))
         .selected_text(format!("{:?}", selected))
         .show_ui(ui, |ui| {
             for mode in T::iter() {
