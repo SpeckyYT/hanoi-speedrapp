@@ -1,4 +1,4 @@
-use std::{fmt::Debug, time::{Duration, Instant}};
+use std::{fmt::Debug, time::Duration};
 
 use eframe::{egui::{self, Align, Align2, Color32, ComboBox, Direction, FontId, Layout, Sense, SidePanel, Slider, Ui, Vec2}, epaint::Hsva};
 use once_cell::sync::Lazy;
@@ -83,7 +83,7 @@ impl HanoiApp {
         let max_disks = if self.extra_mode { MAX_DISKS } else { MAX_DISKS_NORMAL };
         let max_poles = if self.extra_mode { MAX_POLES } else { MAX_POLES_NORMAL };
 
-        ui.add_enabled_ui(self.state != GameState::Playing, |ui| {
+        ui.add_enabled_ui(!matches!(self.state, GameState::Playing(_)), |ui| {
             check_changed!(
                 self.soft_reset();
                 ui.add(Slider::new(&mut self.hanoi.disks_count, 1..=max_disks).text("Disks"));
@@ -116,7 +116,7 @@ impl HanoiApp {
         set_enum_setting(ui, &mut self.color_theme);
         set_enum_setting(ui, &mut self.poles_position);
 
-        ui.add_enabled_ui((self.state != GameState::Playing) && !self.equal_settings(&DEFAULT_HANOI_APP), |ui| {
+        ui.add_enabled_ui(!matches!(self.state, GameState::Playing(_)) && !self.equal_settings(&DEFAULT_HANOI_APP), |ui| {
             if ui.button("Default Settings").clicked() {
                 *self = (*DEFAULT_HANOI_APP).clone();
             }
@@ -135,11 +135,13 @@ impl HanoiApp {
                     moves / 3.0,
                     moves / 50000000.0,
                 ];
-                if times[0] > Duration::MAX.as_secs_f64() {
-                    infinity
-                } else {
-                    times.map(|secs| pretty_duration(&Duration::from_secs_f64(secs), None))
-                }
+                times.map(|secs|
+                    if secs > Duration::MAX.as_secs_f64() {
+                        "∞".to_string()
+                    } else {
+                        pretty_duration(&Duration::from_secs_f64(secs), None)
+                    }
+                )
             }
         };
 
@@ -154,9 +156,8 @@ impl HanoiApp {
     pub fn draw_state(&mut self, ui: &mut egui::Ui) {
         ui.label(match self.state {
             GameState::Reset => "Not started".to_string(),
-            GameState::Playing => format!("{:.3?} seconds", self.start.elapsed().as_secs_f64()),
-            GameState::Finished(end) => {
-                let duration = end.duration_since(self.start);
+            GameState::Playing(start) => format!("{:.3?} seconds", start.elapsed().as_secs_f64()),
+            GameState::Finished(duration) => {
                 let seconds = duration.as_secs_f64();
                 let small_time = if seconds < 0.001 { format!("({:?})", duration) } else { "".to_string() };
                 format!("{seconds:.3?} seconds {small_time}")
@@ -165,7 +166,7 @@ impl HanoiApp {
         ui.label(format!("Moves: {}/{} optimal", self.moves, self.hanoi.required_moves()));
     }
 
-    pub fn draw_completed(&mut self, ui: &mut egui::Ui, end: Instant) {
+    pub fn draw_completed(&mut self, ui: &mut egui::Ui, duration: Duration) {
         ui.heading("Game complete!");
 
         let required_moves = self.hanoi.required_moves().to_number();
@@ -175,13 +176,13 @@ impl HanoiApp {
 
         ui.label(format!(
             "Average moves per second: {:.2}",
-            self.moves as f64 / end.duration_since(self.start).as_secs_f64(),
+            self.moves as f64 / duration.as_secs_f64(),
         ));
 
         if self.moves > required_moves {
             ui.label(format!(
                 "Average optimal moves per second: {:.2}",
-                required_moves as f64 / end.duration_since(self.start).as_secs_f64(),
+                required_moves as f64 / duration.as_secs_f64(),
             ));
         }
 

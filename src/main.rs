@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use eframe::{egui::{self, CentralPanel, Key, Modifiers}, App, Frame, HardwareAcceleration, NativeOptions};
 use serde::{Deserialize, Serialize};
@@ -16,14 +16,10 @@ fn main() -> Result<(), eframe::Error> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 enum GameState {
-    Playing,
     #[serde(skip)]
-    Finished(Instant),
+    Playing(Instant),
+    Finished(Duration),
     Reset,
-}
-
-fn default_instant() -> Instant {
-    Instant::now()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -31,8 +27,6 @@ struct HanoiApp {
     hanoi: HanoiGame,
     player: PlayerKind,
     state: GameState,
-    #[serde(skip, default = "default_instant")]
-    start: Instant,
     moves: u128,
 
     // display
@@ -52,7 +46,6 @@ impl Default for HanoiApp {
             hanoi: Default::default(),
             player: PlayerKind::Human,
             state: GameState::Reset,
-            start: Instant::now(),
             moves: 0,
 
             blindfold: false,
@@ -129,8 +122,7 @@ impl HanoiApp {
                             if !matches!(self.state, GameState::Finished(_)) {
                                 if self.hanoi.shift($f - 1, $t - 1) {
                                     if self.state == GameState::Reset {
-                                        self.state = GameState::Playing;
-                                        self.start = Instant::now();
+                                        self.state = GameState::Playing(Instant::now());
                                     }
                                     self.moves += 1;
                                 }
@@ -154,15 +146,18 @@ impl HanoiApp {
             }
         });
 
-        if matches!(self.state, GameState::Playing) && self.hanoi.finished() {
-            self.state = GameState::Finished(Instant::now());
+        match self.state {
+            GameState::Playing(start) if self.hanoi.finished() => {
+                self.state = GameState::Finished(start.elapsed());
+            },
+            _ => {},
         }
     }
 
     pub fn bot_play(&mut self) {
         if self.state == GameState::Reset {
-            self.state = GameState::Playing;
-            self.start = Instant::now();
+            let start_time = Instant::now();
+            self.state = GameState::Playing(start_time);
             self.moves = 0;
             fn hanoi_bot(game: &mut HanoiApp, n: usize, from_rod: usize, to_rod: usize, aux_rod: usize) {
                 if n > 0 {
@@ -180,7 +175,7 @@ impl HanoiApp {
                 (self.hanoi.end_pole.unwrap_or(self.hanoi.start_pole)) % self.hanoi.poles_count,
                 (self.hanoi.end_pole.unwrap_or(self.hanoi.start_pole + 1)) % self.hanoi.poles_count,
             );
-            self.state = GameState::Finished(Instant::now());
+            self.state = GameState::Finished(start_time.elapsed());
         }
     }
 }
@@ -215,7 +210,7 @@ impl App for HanoiApp {
             }
         });
 
-        if matches!(self.state, GameState::Playing) {
+        if matches!(self.state, GameState::Playing(_)) {
             ctx.request_repaint();
         }
     }
