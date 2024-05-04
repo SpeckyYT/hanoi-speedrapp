@@ -9,3 +9,5 @@ ToH Speedrapp Edition is an offline, fully featured, and blazingly fast desktop 
 - [x] Powerful insights
 - [x] Ultra responsive gameplay
 - [x] Computer player
+- [x] Highscores
+- [x] Blazingly fast 🚀🚀🚀🚀
