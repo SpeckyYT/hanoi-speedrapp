@@ -7,6 +7,8 @@ use strum::IntoEnumIterator;
 
 use crate::{hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, ColorTheme, GameState, HanoiApp, PolesPosition};
 
+const TOWERS_PANEL_ID: &str = "towers";
+
 static DEFAULT_HANOI_APP: Lazy<HanoiApp> = Lazy::new(|| {
     let mut hanoi_app = HanoiApp::default();
     hanoi_app.soft_reset();
@@ -27,54 +29,56 @@ macro_rules! check_changed {
 
 impl HanoiApp {
     pub fn draw_blindfold(&self, ctx: &egui::Context) {
-        SidePanel::right("blindfold")
+        SidePanel::right(TOWERS_PANEL_ID)
         .show(ctx, |ui| {
             ui.label("[blindfold enabled]");
         });
     }
 
     pub fn draw_poles(&self, ctx: &egui::Context) {
-        for i in (0..self.hanoi.poles_count).rev() {
-            SidePanel::right(format!("tower_{i}"))
-            .show(ctx, |ui| {
-                ui.with_layout(
-                    Layout::from_main_dir_and_cross_align(
-                        match self.poles_position {
-                            PolesPosition::Bottom => Direction::BottomUp,
-                            PolesPosition::Top => Direction::TopDown,
-                        },
-                        Align::Center,
-                    ),
-                    |ui| {
-                        for j in 0..self.hanoi.poles[i].len() {
-                            let disk_number = self.hanoi.poles[i][j];
-                            let width = 20.0 + 10.0 * disk_number as f32;
-                            let height = 20.0;
-                            let size = Vec2::new(width, height);
-                            let (response, painter) = ui.allocate_painter(size, Sense::click_and_drag());
-                            let color = match self.color_theme {
-                                ColorTheme::Rainbow => {
-                                    let hsv = Hsva::new(disk_number as f32 / self.hanoi.disks_count as f32, 1.0, 1.0, 1.0);
-                                    let [ r, g, b ] = hsv.to_srgb();
-                                    Color32::from_rgb(r, g, b)
-                                },
-                                ColorTheme::Purple => {
-                                    if disk_number % 2 == 0 {
-                                        Color32::from_rgb(212, 156, 234)
-                                    } else {
-                                        Color32::from_rgb(134, 88, 154)
-                                    }
-                                },
-                            };
-                            painter.rect_filled(response.rect, height / 2.5, color);
-                            if self.disk_number {
-                                painter.text(response.rect.center(), Align2::CENTER_CENTER, disk_number.to_string(), FontId::monospace(height / 1.5), Color32::BLACK);
+        SidePanel::right(TOWERS_PANEL_ID)
+        .show(ctx, |ui| {
+            ui.columns(self.hanoi.poles_count, |uis| {
+                uis.iter_mut().enumerate().for_each(|(i, ui)| {
+                    ui.with_layout(
+                        Layout::from_main_dir_and_cross_align(
+                            match self.poles_position {
+                                PolesPosition::Bottom => Direction::BottomUp,
+                                PolesPosition::Top => Direction::TopDown,
+                            },
+                            Align::Center,
+                        ),
+                        |ui| {
+                            for j in 0..self.hanoi.poles[i].len() {
+                                let disk_number = self.hanoi.poles[i][j];
+                                let width = 20.0 + 10.0 * disk_number as f32;
+                                let height = 20.0;
+                                let size = Vec2::new(width, height);
+                                let (response, painter) = ui.allocate_painter(size, Sense::click_and_drag());
+                                let color = match self.color_theme {
+                                    ColorTheme::Rainbow => {
+                                        let hsv = Hsva::new(disk_number as f32 / self.hanoi.disks_count as f32, 1.0, 1.0, 1.0);
+                                        let [ r, g, b ] = hsv.to_srgb();
+                                        Color32::from_rgb(r, g, b)
+                                    },
+                                    ColorTheme::Purple => {
+                                        if disk_number % 2 == 0 {
+                                            Color32::from_rgb(212, 156, 234)
+                                        } else {
+                                            Color32::from_rgb(134, 88, 154)
+                                        }
+                                    },
+                                };
+                                painter.rect_filled(response.rect, height / 2.5, color);
+                                if self.disk_number {
+                                    painter.text(response.rect.center(), Align2::CENTER_CENTER, disk_number.to_string(), FontId::monospace(height / 1.5), Color32::BLACK);
+                                }
                             }
                         }
-                    }
-                );
-            });
-        }
+                    );
+                });
+            })
+        });
     }
 
     pub fn draw_settings(&mut self, ui: &mut egui::Ui) {
