@@ -55,7 +55,7 @@ struct HanoiApp {
     poles_position: PolesPosition,
 
     // other
-    #[serde(default = "falsy")]
+    #[serde(skip, default = "falsy")]
     extra_mode: bool,
 
     #[serde(default)]

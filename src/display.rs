@@ -12,6 +12,9 @@ const TOWERS_PANEL_ID: &str = "towers";
 const DISK_HEIGHT: f32 = 30.0;
 const DISK_WIDTH_MIN: f32 = 20.0;
 const POLE_WIDTH: f32 = 3.0;
+const POLE_COLOR: Color32 = Color32::WHITE;
+const TEXT_COLOR: Color32 = Color32::WHITE;
+const TEXT_OUTLINE_COLOR: Color32 = Color32::BLACK;
 
 static DEFAULT_HANOI_APP: Lazy<HanoiApp> = Lazy::new(|| {
     let mut hanoi_app = HanoiApp::default();
@@ -77,10 +80,13 @@ impl HanoiApp {
             |ui| {
                 let max_width = ui.available_width();
                 let width_step = (max_width - DISK_WIDTH_MIN) / self.hanoi.disks_count as f32;
+                let max_height = ui.available_height();
+                let spacing = ui.style_mut().spacing.item_spacing.y;
+                let disk_height = DISK_HEIGHT.min((max_height - spacing * (self.hanoi.disks_count + 2) as f32) / (self.hanoi.disks_count as f32)).max(0.1);
 
                 self.hanoi.poles[i].iter().for_each(|&disk_number| {
                     let width = DISK_WIDTH_MIN + width_step * disk_number as f32;
-                    let size = Vec2::new(width, DISK_HEIGHT);
+                    let size = Vec2::new(width, disk_height);
                     let (response, painter) = ui.allocate_painter(size, Sense::hover());
                     let color = match self.color_theme {
                         ColorTheme::Rainbow => {
@@ -96,32 +102,31 @@ impl HanoiApp {
                             }
                         },
                     };
-                    painter.rect_filled(response.rect, DISK_HEIGHT / 2.5, color);
+                    painter.rect_filled(response.rect, disk_height / 2.5, color);
                     if self.disk_number {
                         let center_pos = response.rect.center();
                         let align = Align2::CENTER_CENTER;
                         let disk_number = disk_number.to_string();
-                        let font = FontId::monospace(DISK_HEIGHT / 1.5);
+                        let font = FontId::monospace(disk_height / 1.5);
 
                         for x in -1..=1 {
                             for y in -1..=1 {
                                 if x == 0 && y == 0 { continue }
-                                painter.text(center_pos + vec2(x as f32, y as f32), align, &disk_number, font.clone(), Color32::BLACK);
+                                painter.text(center_pos + vec2(x as f32, y as f32), align, &disk_number, font.clone(), TEXT_OUTLINE_COLOR);
                             }
                         }
-                        painter.text(center_pos, align, disk_number, font, Color32::WHITE);
+                        painter.text(center_pos, align, disk_number, font, TEXT_COLOR);
                     }
                 });
 
                 if self.show_poles {
-                    let spacing = ui.style_mut().spacing.item_spacing.y;
-                    let single_height = DISK_HEIGHT + spacing;
+                    let single_height = disk_height + spacing;
                     let pole_size = self.hanoi.poles[i].len();
                     let remaining_size = self.hanoi.disks_count - pole_size + 1;
                     let remaining_height = remaining_size as f32 * single_height;
                     let size = vec2(POLE_WIDTH, remaining_height);
                     let (response, painter) = ui.allocate_painter(size, Sense::hover());
-                    painter.rect_filled(response.rect, 0.0, Color32::BLACK);
+                    painter.rect_filled(response.rect, 0.0, POLE_COLOR);
                 }
             }
         );
