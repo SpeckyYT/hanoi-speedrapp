@@ -40,7 +40,7 @@ impl HanoiApp {
     }
 
     pub fn get_highscores_entry(&mut self, header: Header) -> &mut Vec<Score> {
-        self.highscores.entry(header).or_insert(Vec::new())
+        self.highscores.entry(header).or_default()
     }
 
     pub fn save_score(&mut self, duration: Duration) {
@@ -53,7 +53,7 @@ impl HanoiApp {
 
         let entry = self.get_highscores_entry(header);
         if let Some((i, _)) = entry.iter().enumerate().find(|(_,s)| score.time < s.time) {
-            entry.insert(i, score.clone());
+            entry.insert(i, score);
         } else {
             entry.push(score);
         }

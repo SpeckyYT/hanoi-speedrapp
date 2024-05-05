@@ -9,6 +9,8 @@ use strum::{EnumIter, IntoEnumIterator};
 use crate::{hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, GameState, HanoiApp};
 
 const TOWERS_PANEL_ID: &str = "towers";
+const DISK_HEIGHT: f32 = 30.0;
+const DISK_WIDTH_MIN: f32 = 20.0;
 const POLE_WIDTH: f32 = 3.0;
 
 static DEFAULT_HANOI_APP: Lazy<HanoiApp> = Lazy::new(|| {
@@ -53,6 +55,7 @@ impl HanoiApp {
 
     pub fn draw_poles(&self, ctx: &egui::Context) {
         SidePanel::right(TOWERS_PANEL_ID)
+        .min_width(DISK_WIDTH_MIN * self.hanoi.poles_count as f32)
         .show(ctx, |ui| {
             ui.columns(self.hanoi.poles_count, |uis| {
                 uis.iter_mut().enumerate().for_each(|(i, ui)| {
@@ -72,10 +75,12 @@ impl HanoiApp {
                 Align::Center,
             ),
             |ui| {
-                let height = 20.0;
+                let max_width = ui.available_width();
+                let width_step = (max_width - DISK_WIDTH_MIN) / self.hanoi.disks_count as f32;
+
                 self.hanoi.poles[i].iter().for_each(|&disk_number| {
-                    let width = 20.0 + 10.0 * disk_number as f32;
-                    let size = Vec2::new(width, height);
+                    let width = DISK_WIDTH_MIN + width_step * disk_number as f32;
+                    let size = Vec2::new(width, DISK_HEIGHT);
                     let (response, painter) = ui.allocate_painter(size, Sense::hover());
                     let color = match self.color_theme {
                         ColorTheme::Rainbow => {
@@ -91,12 +96,12 @@ impl HanoiApp {
                             }
                         },
                     };
-                    painter.rect_filled(response.rect, height / 2.5, color);
+                    painter.rect_filled(response.rect, DISK_HEIGHT / 2.5, color);
                     if self.disk_number {
                         let center_pos = response.rect.center();
                         let align = Align2::CENTER_CENTER;
                         let disk_number = disk_number.to_string();
-                        let font = FontId::monospace(height / 1.5);
+                        let font = FontId::monospace(DISK_HEIGHT / 1.5);
 
                         for x in -1..=1 {
                             for y in -1..=1 {
@@ -110,7 +115,7 @@ impl HanoiApp {
 
                 if self.show_poles {
                     let spacing = ui.style_mut().spacing.item_spacing.y;
-                    let single_height = height + spacing;
+                    let single_height = DISK_HEIGHT + spacing;
                     let pole_size = self.hanoi.poles[i].len();
                     let remaining_size = self.hanoi.disks_count - pole_size + 1;
                     let remaining_height = remaining_size as f32 * single_height;
