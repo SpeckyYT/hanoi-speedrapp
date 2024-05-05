@@ -6,8 +6,9 @@ use strum::EnumIter;
 
 use crate::{GameState, HanoiApp};
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
 pub enum PlayerKind {
+    #[default]
     Human,
     Bot,
     Replay,
@@ -52,8 +53,9 @@ impl HanoiApp {
 
         match self.state {
             GameState::Playing(start) if self.hanoi.finished() => {
-                self.state = GameState::Finished(start.elapsed());
-                self.save_score();
+                let elapsed = start.elapsed();
+                self.state = GameState::Finished(elapsed);
+                self.save_score(elapsed);
             },
             _ => {},
         }

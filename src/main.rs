@@ -6,6 +6,7 @@ use highscores::Highscores;
 use play::PlayerKind;
 use serde::{Deserialize, Serialize};
 use hanoi::HanoiGame;
+use util::{falsy, truthy};
 
 mod hanoi;
 mod display;
@@ -21,31 +22,43 @@ fn main() -> Result<(), eframe::Error> {
     HanoiApp::run()
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 enum GameState {
     #[serde(skip)]
     Playing(Instant),
     Finished(Duration),
+    #[default]
     Reset,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 struct HanoiApp {
+    #[serde(default)]
     hanoi: HanoiGame,
+    #[serde(default)]
     player: PlayerKind,
+    #[serde(default)]
     state: GameState,
+    #[serde(default)]
     moves: u128,
 
     // display
+    #[serde(default = "falsy")]
     blindfold: bool,
+    #[serde(default = "truthy")]
     show_poles: bool,
+    #[serde(default = "falsy")]
     disk_number: bool,
+    #[serde(default)]
     color_theme: ColorTheme,
+    #[serde(default)]
     poles_position: PolesPosition,
 
     // other
+    #[serde(default = "falsy")]
     extra_mode: bool,
 
+    #[serde(default)]
     highscores: Highscores,
 }
 

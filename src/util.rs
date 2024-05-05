@@ -32,3 +32,6 @@ impl HanoiApp {
         })
     }
 }
+
+pub fn truthy() -> bool { true }
+pub fn falsy() -> bool { false }

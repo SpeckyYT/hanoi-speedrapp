@@ -2,8 +2,9 @@ use std::time::Duration;
 
 use eframe::egui::ahash::AHashMap;
 use serde::{Deserialize, Serialize};
+use chrono::{DateTime, Utc};
 
-use crate::{GameState, HanoiApp};
+use crate::HanoiApp;
 
 pub type Highscores = AHashMap<Header, Vec<Score>>;
 pub type Move = (Duration, usize, usize);
@@ -21,6 +22,8 @@ pub struct Header {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Score {
     pub time: Duration,
+    #[serde(default)]
+    pub date: DateTime<Utc>,
     pub moves: Vec<Move>,
 }
 
@@ -40,13 +43,11 @@ impl HanoiApp {
         self.highscores.entry(header).or_insert(Vec::new())
     }
 
-    pub fn save_score(&mut self) {
+    pub fn save_score(&mut self, duration: Duration) {
         let header = self.get_current_header();
         let score = Score {
-            time: match self.state {
-                GameState::Finished(time) => time,
-                _ => Duration::MAX,
-            },
+            time: duration,
+            date: Utc::now() - duration,
             moves: self.hanoi.moves_history.clone(),
         };
 

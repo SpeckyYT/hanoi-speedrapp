@@ -1,6 +1,6 @@
 use std::{fmt::Debug, time::Duration};
 
-use eframe::{egui::{self, Align, Align2, Color32, ComboBox, Direction, FontId, Layout, RichText, Sense, SidePanel, Slider, Ui, Vec2}, epaint::Hsva};
+use eframe::{egui::{self, vec2, Align, Align2, Color32, ComboBox, Direction, FontId, Layout, RichText, Sense, SidePanel, Slider, Ui, Vec2}, epaint::Hsva};
 use once_cell::sync::Lazy;
 use pretty_duration::pretty_duration;
 use serde::{Deserialize, Serialize};
@@ -9,6 +9,7 @@ use strum::{EnumIter, IntoEnumIterator};
 use crate::{hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, GameState, HanoiApp};
 
 const TOWERS_PANEL_ID: &str = "towers";
+const POLE_WIDTH: f32 = 3.0;
 
 static DEFAULT_HANOI_APP: Lazy<HanoiApp> = Lazy::new(|| {
     let mut hanoi_app = HanoiApp::default();
@@ -16,14 +17,16 @@ static DEFAULT_HANOI_APP: Lazy<HanoiApp> = Lazy::new(|| {
     hanoi_app
 });
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
+#[derive(Default, Debug, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
 pub enum ColorTheme {
+    #[default]
     Rainbow,
     Purple,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
+#[derive(Default, Debug, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
 pub enum PolesPosition {
+    #[default]
     Bottom,
     Top,
 }
@@ -53,45 +56,70 @@ impl HanoiApp {
         .show(ctx, |ui| {
             ui.columns(self.hanoi.poles_count, |uis| {
                 uis.iter_mut().enumerate().for_each(|(i, ui)| {
-                    ui.with_layout(
-                        Layout::from_main_dir_and_cross_align(
-                            match self.poles_position {
-                                PolesPosition::Bottom => Direction::BottomUp,
-                                PolesPosition::Top => Direction::TopDown,
-                            },
-                            Align::Center,
-                        ),
-                        |ui| {
-                            for j in 0..self.hanoi.poles[i].len() {
-                                let disk_number = self.hanoi.poles[i][j];
-                                let width = 20.0 + 10.0 * disk_number as f32;
-                                let height = 20.0;
-                                let size = Vec2::new(width, height);
-                                let (response, painter) = ui.allocate_painter(size, Sense::click_and_drag());
-                                let color = match self.color_theme {
-                                    ColorTheme::Rainbow => {
-                                        let hsv = Hsva::new(disk_number as f32 / self.hanoi.disks_count as f32, 1.0, 1.0, 1.0);
-                                        let [ r, g, b ] = hsv.to_srgb();
-                                        Color32::from_rgb(r, g, b)
-                                    },
-                                    ColorTheme::Purple => {
-                                        if disk_number % 2 == 0 {
-                                            Color32::from_rgb(212, 156, 234)
-                                        } else {
-                                            Color32::from_rgb(134, 88, 154)
-                                        }
-                                    },
-                                };
-                                painter.rect_filled(response.rect, height / 2.5, color);
-                                if self.disk_number {
-                                    painter.text(response.rect.center(), Align2::CENTER_CENTER, disk_number.to_string(), FontId::monospace(height / 1.5), Color32::BLACK);
-                                }
-                            }
-                        }
-                    );
+                    self.draw_pole(ui, i);
                 });
             })
         });
+    }
+
+    pub fn draw_pole(&self, ui: &mut Ui, i: usize) {
+        ui.with_layout(
+            Layout::from_main_dir_and_cross_align(
+                match self.poles_position {
+                    PolesPosition::Bottom => Direction::BottomUp,
+                    PolesPosition::Top => Direction::TopDown,
+                },
+                Align::Center,
+            ),
+            |ui| {
+                let height = 20.0;
+                self.hanoi.poles[i].iter().for_each(|&disk_number| {
+                    let width = 20.0 + 10.0 * disk_number as f32;
+                    let size = Vec2::new(width, height);
+                    let (response, painter) = ui.allocate_painter(size, Sense::hover());
+                    let color = match self.color_theme {
+                        ColorTheme::Rainbow => {
+                            let hsv = Hsva::new(disk_number as f32 / self.hanoi.disks_count as f32, 1.0, 1.0, 1.0);
+                            let [ r, g, b ] = hsv.to_srgb();
+                            Color32::from_rgb(r, g, b)
+                        },
+                        ColorTheme::Purple => {
+                            if disk_number % 2 == 0 {
+                                Color32::from_rgb(212, 156, 234)
+                            } else {
+                                Color32::from_rgb(134, 88, 154)
+                            }
+                        },
+                    };
+                    painter.rect_filled(response.rect, height / 2.5, color);
+                    if self.disk_number {
+                        let center_pos = response.rect.center();
+                        let align = Align2::CENTER_CENTER;
+                        let disk_number = disk_number.to_string();
+                        let font = FontId::monospace(height / 1.5);
+
+                        for x in -1..=1 {
+                            for y in -1..=1 {
+                                if x == 0 && y == 0 { continue }
+                                painter.text(center_pos + vec2(x as f32, y as f32), align, &disk_number, font.clone(), Color32::BLACK);
+                            }
+                        }
+                        painter.text(center_pos, align, disk_number, font, Color32::WHITE);
+                    }
+                });
+
+                if self.show_poles {
+                    let spacing = ui.style_mut().spacing.item_spacing.y;
+                    let single_height = height + spacing;
+                    let pole_size = self.hanoi.poles[i].len();
+                    let remaining_size = self.hanoi.disks_count - pole_size + 1;
+                    let remaining_height = remaining_size as f32 * single_height;
+                    let size = vec2(POLE_WIDTH, remaining_height);
+                    let (response, painter) = ui.allocate_painter(size, Sense::hover());
+                    painter.rect_filled(response.rect, 0.0, Color32::BLACK);
+                }
+            }
+        );
     }
 
     pub fn draw_settings(&mut self, ui: &mut egui::Ui) {
@@ -213,6 +241,7 @@ impl HanoiApp {
                 ui.label(format!("High score difference: +{:.3?} seconds", (duration - highscore.time).as_secs_f64()));
             } else {
                 ui.label(RichText::new("New high score!").color(Color32::from_rgb(0xFF, 0xA5, 0x00)));
+                ui.label(format!("Difference: -{:.3?} seconds", (highscore.time - duration).as_secs_f64()));
             }
         }
     }
