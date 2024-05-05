@@ -13,9 +13,11 @@ mod play;
 mod highscores;
 mod util;
 
+const PROFILING: bool = false;
 const APP_NAME: &str = "Towers of Hanoi - Speedrapp Edition";
 
 fn main() -> Result<(), eframe::Error> {
+    enable_profiling();
     HanoiApp::run()
 }
 
@@ -130,5 +132,17 @@ impl App for HanoiApp {
         if matches!(self.state, GameState::Playing(_)) {
             ctx.request_repaint();
         }
+    }
+}
+
+fn enable_profiling() {
+    if PROFILING {
+        let server_addr = format!("http://127.0.0.1:{}", puffin_http::DEFAULT_PORT);
+        match puffin_http::Server::new(&server_addr) {
+            Ok(_) => eprintln!("Run this to view profiling data: puffin_viewer {server_addr}"),
+            Err(_) => eprintln!("Unable to run the profiling server"),
+        }
+        eprintln!("Run this to view profiling data: puffin_viewer {server_addr}");
+        puffin::set_scopes_on(true);
     }
 }
