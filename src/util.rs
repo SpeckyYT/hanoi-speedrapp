@@ -33,5 +33,5 @@ impl HanoiApp {
     }
 }
 
-pub fn truthy() -> bool { true }
-pub fn falsy() -> bool { false }
+pub const fn truthy() -> bool { true }
+pub const fn falsy() -> bool { false }

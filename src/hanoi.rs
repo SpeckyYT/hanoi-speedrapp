@@ -50,7 +50,7 @@ impl HanoiGame {
     }
     pub fn reset(&mut self) {
         self.moves_history.clear();
-        self.poles = Default::default();
+        self.poles.iter_mut().for_each(|a| a.clear());
 
         for i in (1..=self.disks_count).rev() {
             self.poles[self.start_pole - 1].push(i);

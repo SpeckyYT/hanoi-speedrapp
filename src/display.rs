@@ -1,12 +1,12 @@
 use std::{fmt::Debug, time::Duration};
 
-use eframe::{egui::{self, vec2, Align, Align2, Color32, ComboBox, Direction, FontId, Layout, RichText, Sense, SidePanel, Slider, Ui, Vec2}, epaint::Hsva};
+use eframe::{egui::{self, vec2, Align, Align2, Color32, ComboBox, Direction, FontId, Layout, RichText, Sense, SidePanel, Slider, TopBottomPanel, Ui, Vec2, Window}, epaint::Hsva};
 use once_cell::sync::Lazy;
 use pretty_duration::pretty_duration;
 use serde::{Deserialize, Serialize};
 use strum::{EnumIter, IntoEnumIterator};
 
-use crate::{hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, GameState, HanoiApp};
+use crate::{hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, GameState, HanoiApp, APP_NAME};
 
 const TOWERS_PANEL_ID: &str = "towers";
 const DISK_HEIGHT: f32 = 30.0;
@@ -49,6 +49,26 @@ macro_rules! check_changed {
 }
 
 impl HanoiApp {
+    pub fn draw_top_bar(&mut self, ctx: &egui::Context) {
+        TopBottomPanel::top("top panel")
+        .show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.heading(APP_NAME);
+                
+                ui.separator();
+                
+                ui.vertical(|ui| {
+                    self.draw_state(ui);
+                });
+                ui.separator();
+                
+                if ui.button("Settings").clicked() {
+                    self.settings_window = !self.settings_window;
+                }
+            });
+        });
+    }
+
     pub fn draw_blindfold(&self, ctx: &egui::Context) {
         SidePanel::right(TOWERS_PANEL_ID)
         .show(ctx, |ui| {
@@ -56,16 +76,12 @@ impl HanoiApp {
         });
     }
 
-    pub fn draw_poles(&self, ctx: &egui::Context) {
-        SidePanel::right(TOWERS_PANEL_ID)
-        .min_width(DISK_WIDTH_MIN * self.hanoi.poles_count as f32)
-        .show(ctx, |ui| {
-            ui.columns(self.hanoi.poles_count, |uis| {
-                uis.iter_mut().enumerate().for_each(|(i, ui)| {
-                    self.draw_pole(ui, i);
-                });
-            })
-        });
+    pub fn draw_poles(&self, ui: &mut Ui) {
+        ui.columns(self.hanoi.poles_count, |uis| {
+            uis.iter_mut().enumerate().for_each(|(i, ui)| {
+                self.draw_pole(ui, i);
+            });
+        })
     }
 
     pub fn draw_pole(&self, ui: &mut Ui, i: usize) {
@@ -132,84 +148,92 @@ impl HanoiApp {
         );
     }
 
-    pub fn draw_settings(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Settings");
+    pub fn draw_settings(&mut self, ctx: &egui::Context) {
+        let mut settings_window = self.settings_window;
 
-        let max_disks = if self.extra_mode { MAX_DISKS } else { MAX_DISKS_NORMAL };
-        let max_poles = if self.extra_mode { MAX_POLES } else { MAX_POLES_NORMAL };
+        Window::new("Settings")
+        .open(&mut settings_window)
+        .show(ctx, |ui| {
+            ui.heading("Settings");
 
-        ui.add_enabled_ui(!matches!(self.state, GameState::Playing(_)), |ui| {
-            check_changed!(
-                self.soft_reset();
-                ui.add(Slider::new(&mut self.hanoi.disks_count, 1..=max_disks).text("Disks"));
-                {
-                    let resp = ui.add(Slider::new(&mut self.hanoi.poles_count, 2..=max_poles).text("Poles"));
-                    if resp.changed {
-                        self.hanoi.start_pole = self.hanoi.start_pole.min(self.hanoi.poles_count);
-                    }
-                    resp
+            let max_disks = if self.extra_mode { MAX_DISKS } else { MAX_DISKS_NORMAL };
+            let max_poles = if self.extra_mode { MAX_POLES } else { MAX_POLES_NORMAL };
+    
+            ui.add_enabled_ui(!matches!(self.state, GameState::Playing(_)), |ui| {
+                check_changed!(
+                    self.soft_reset();
+                    ui.add(Slider::new(&mut self.hanoi.disks_count, 1..=max_disks).text("Disks"));
+                    {
+                        let resp = ui.add(Slider::new(&mut self.hanoi.poles_count, 2..=max_poles).text("Poles"));
+                        if resp.changed {
+                            self.hanoi.start_pole = self.hanoi.start_pole.min(self.hanoi.poles_count);
+                        }
+                        resp
+                    };
+                    ui.add(Slider::new(&mut self.hanoi.start_pole, 1..=self.hanoi.poles_count).text("Start pole"));
+                );
+    
+                let mut any_pole = self.hanoi.end_pole.is_none();
+                ui.checkbox(&mut any_pole, "Any end pole");
+                if any_pole {
+                    self.hanoi.end_pole = None;
+                } else {
+                    let end_pole = self.hanoi.end_pole.get_or_insert(1);
+                    ui.add(Slider::new(end_pole, 1..=self.hanoi.poles_count).text("End pole"));
                 };
-                ui.add(Slider::new(&mut self.hanoi.start_pole, 1..=self.hanoi.poles_count).text("Start pole"));
-            );
-
-            let mut any_pole = self.hanoi.end_pole.is_none();
-            ui.checkbox(&mut any_pole, "Any end pole");
-            if any_pole {
-                self.hanoi.end_pole = None;
+    
+                ui.checkbox(&mut self.hanoi.illegal_moves, "Illegal moves");
+                ui.checkbox(&mut self.blindfold, "Blindfold");
+            });
+            ui.checkbox(&mut self.show_poles, "Show poles");
+            ui.checkbox(&mut self.disk_number, "Disk number");
+    
+            set_enum_setting(ui, &mut self.player);
+            set_enum_setting(ui, &mut self.color_theme);
+            set_enum_setting(ui, &mut self.poles_position);
+    
+            ui.add_enabled_ui(!matches!(self.state, GameState::Playing(_)) && !self.equal_settings(&DEFAULT_HANOI_APP), |ui| {
+                if ui.button("Default Settings").clicked() {
+                    *self = (*DEFAULT_HANOI_APP).clone();
+                }
+            });
+    
+            let highscore = self.get_highscores_entry(self.get_current_header()).first();
+            if let Some(highscore) = highscore {
+                ui.label(format!("Your high score for these settings: {:.3?} seconds", highscore.time.as_secs_f64()));
             } else {
-                let end_pole = self.hanoi.end_pole.get_or_insert(1);
-                ui.add(Slider::new(end_pole, 1..=self.hanoi.poles_count).text("End pole"));
+                ui.label("There is no high score for these settings.");
+            }
+    
+            let required_moves = self.hanoi.required_moves();
+            let infinity = ["∞".to_string(), "∞".to_string()];
+            let [expert_time_string, computer_time_string] = match required_moves {
+                RequiredMoves::Impossible => infinity,
+                RequiredMoves::Count(moves) => {
+                    let moves = (moves - 1) as f64;
+                    let times = [
+                        moves / 3.0,
+                        moves / 50000000.0,
+                    ];
+                    times.map(|secs|
+                        if secs > Duration::MAX.as_secs_f64() {
+                            "∞".to_string()
+                        } else {
+                            pretty_duration(&Duration::from_secs_f64(secs), None)
+                        }
+                    )
+                }
             };
-
-            ui.checkbox(&mut self.hanoi.illegal_moves, "Illegal moves");
-            ui.checkbox(&mut self.blindfold, "Blindfold");
-        });
-        ui.checkbox(&mut self.show_poles, "Show poles");
-        ui.checkbox(&mut self.disk_number, "Disk number");
-
-        set_enum_setting(ui, &mut self.player);
-        set_enum_setting(ui, &mut self.color_theme);
-        set_enum_setting(ui, &mut self.poles_position);
-
-        ui.add_enabled_ui(!matches!(self.state, GameState::Playing(_)) && !self.equal_settings(&DEFAULT_HANOI_APP), |ui| {
-            if ui.button("Default Settings").clicked() {
-                *self = (*DEFAULT_HANOI_APP).clone();
+    
+            ui.label(format!("Estimated time for an expert player: {expert_time_string}"));
+            ui.label(format!("Estimated time for a computer: {computer_time_string}"));
+    
+            if matches!(required_moves, RequiredMoves::Impossible) {
+                ui.colored_label(Color32::RED, "Warning: Game is impossible. Increase the number of stacks or decrease the number of disks.");
             }
         });
 
-        let highscore = self.get_highscores_entry(self.get_current_header()).first();
-        if let Some(highscore) = highscore {
-            ui.label(format!("Your high score for these settings: {:.3?} seconds", highscore.time.as_secs_f64()));
-        } else {
-            ui.label("There is no high score for these settings.");
-        }
-
-        let required_moves = self.hanoi.required_moves();
-        let infinity = ["∞".to_string(), "∞".to_string()];
-        let [expert_time_string, computer_time_string] = match required_moves {
-            RequiredMoves::Impossible => infinity,
-            RequiredMoves::Count(moves) => {
-                let moves = (moves - 1) as f64;
-                let times = [
-                    moves / 3.0,
-                    moves / 50000000.0,
-                ];
-                times.map(|secs|
-                    if secs > Duration::MAX.as_secs_f64() {
-                        "∞".to_string()
-                    } else {
-                        pretty_duration(&Duration::from_secs_f64(secs), None)
-                    }
-                )
-            }
-        };
-
-        ui.label(format!("Estimated time for an expert player: {expert_time_string}"));
-        ui.label(format!("Estimated time for a computer: {computer_time_string}"));
-
-        if matches!(required_moves, RequiredMoves::Impossible) {
-            ui.colored_label(Color32::RED, "Warning: Game is impossible. Increase the number of stacks or decrease the number of disks.");
-        }
+        self.settings_window = settings_window;
     }
 
     pub fn draw_state(&mut self, ui: &mut egui::Ui) {
@@ -225,35 +249,38 @@ impl HanoiApp {
         ui.label(format!("Moves: {}/{} optimal", self.moves, self.hanoi.required_moves()));
     }
 
-    pub fn draw_completed(&mut self, ui: &mut egui::Ui, duration: Duration) {
-        ui.heading("Game complete!");
-
-        let required_moves = self.hanoi.required_moves().to_number();
-        if self.moves <= required_moves {
-            ui.label("You had the optimal solution!");
-        }
-
-        ui.label(format!(
-            "Average moves per second: {:.2}",
-            self.moves as f64 / duration.as_secs_f64(),
-        ));
-
-        if self.moves > required_moves {
-            ui.label(format!(
-                "Average optimal moves per second: {:.2}",
-                required_moves as f64 / duration.as_secs_f64(),
-            ));
-        }
-
-        if let Some(highscore) = self.get_highscores_entry(self.get_current_header()).first() {
-            ui.label(format!("Your best time: {:.3?} seconds", highscore.time.as_secs_f64()));
-            if duration > highscore.time {
-                ui.label(format!("High score difference: +{:.3?} seconds", (duration - highscore.time).as_secs_f64()));
-            } else {
-                ui.label(RichText::new("New high score!").color(Color32::from_rgb(0xFF, 0xA5, 0x00)));
-                ui.label(format!("Difference: -{:.3?} seconds", (highscore.time - duration).as_secs_f64()));
+    pub fn draw_completed(&mut self, ctx: &egui::Context, duration: Duration) {
+        Window::new("Game complete!")
+        .collapsible(false)
+        .auto_sized()
+        .show(ctx, |ui| {
+            let required_moves = self.hanoi.required_moves().to_number();
+            if self.moves <= required_moves {
+                ui.label("You had the optimal solution!");
             }
-        }
+    
+            ui.label(format!(
+                "Average moves per second: {:.2}",
+                self.moves as f64 / duration.as_secs_f64(),
+            ));
+    
+            if self.moves > required_moves {
+                ui.label(format!(
+                    "Average optimal moves per second: {:.2}",
+                    required_moves as f64 / duration.as_secs_f64(),
+                ));
+            }
+    
+            if let Some(highscore) = self.get_highscores_entry(self.get_current_header()).first() {
+                ui.label(format!("Your best time: {:.3?} seconds", highscore.time.as_secs_f64()));
+                if duration > highscore.time {
+                    ui.label(format!("High score difference: +{:.3?} seconds", (duration - highscore.time).as_secs_f64()));
+                } else {
+                    ui.label(RichText::new("New high score!").color(Color32::from_rgb(0xFF, 0xA5, 0x00)));
+                    ui.label(format!("Difference: -{:.3?} seconds", (highscore.time - duration).as_secs_f64()));
+                }
+            }
+        });
     }
 }
 

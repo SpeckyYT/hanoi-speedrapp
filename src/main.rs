@@ -54,6 +54,10 @@ struct HanoiApp {
     #[serde(default)]
     poles_position: PolesPosition,
 
+    // windows
+    #[serde(default = "falsy")]
+    settings_window: bool,
+
     // other
     #[serde(skip, default = "falsy")]
     extra_mode: bool,
@@ -75,6 +79,8 @@ impl Default for HanoiApp {
             disk_number: false,
             color_theme: ColorTheme::Rainbow,
             poles_position: PolesPosition::Bottom,
+
+            settings_window: false,
 
             extra_mode: false,
 
@@ -123,28 +129,27 @@ impl App for HanoiApp {
             PlayerKind::Bot => self.bot_play(),
             PlayerKind::Replay => todo!(),
         };
-
-        if self.blindfold {
-            self.draw_blindfold(ctx);
-        } else {
-            self.draw_poles(ctx);
-        }
+        
+        self.draw_top_bar(ctx);
 
         CentralPanel::default()
         .show(ctx, |ui| {
-            self.draw_settings(ui);
-            ui.separator();
-            self.draw_state(ui);
-            if let GameState::Finished(end) = self.state {
-                ui.separator();
-                self.draw_completed(ui, end);
-            }
-            ui.separator();
-        });
+            self.draw_settings(ctx);
 
-        if matches!(self.state, GameState::Playing(_)) {
-            ctx.request_repaint();
-        }
+            if self.blindfold {
+                self.draw_blindfold(ctx);
+            } else {
+                self.draw_poles(ui);
+            }
+
+            if let GameState::Finished(end) = self.state {
+                self.draw_completed(ctx, end);
+            }
+    
+            if matches!(self.state, GameState::Playing(_)) {
+                ctx.request_repaint();
+            }
+        });
     }
 }
 
