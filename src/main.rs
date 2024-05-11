@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 
 use display::{ColorTheme, PolesPosition};
 use eframe::{egui, App, Frame, HardwareAcceleration, NativeOptions};
-use highscores::Highscores;
+use highscores::{Header, Highscores};
 use play::PlayerKind;
 use serde::{Deserialize, Serialize};
 use hanoi::HanoiGame;
@@ -57,6 +57,8 @@ struct HanoiApp {
     // windows
     #[serde(default = "falsy")]
     settings_window: bool,
+    #[serde(default = "falsy")]
+    replays_window: bool,
 
     // other
     #[serde(skip, default = "falsy")]
@@ -64,6 +66,8 @@ struct HanoiApp {
 
     #[serde(default)]
     highscores: Highscores,
+    #[serde(default)]
+    replays_filter: Header,
 }
 
 impl Default for HanoiApp {
@@ -81,10 +85,12 @@ impl Default for HanoiApp {
             poles_position: PolesPosition::Bottom,
 
             settings_window: false,
+            replays_window: false,
 
             extra_mode: false,
 
             highscores: Default::default(),
+            replays_filter: Default::default(),
         }
     }
 }
@@ -127,7 +133,7 @@ impl App for HanoiApp {
         match self.player {
             PlayerKind::Human => self.player_play(ctx),
             PlayerKind::Bot => self.bot_play(),
-            PlayerKind::Replay => todo!(),
+            PlayerKind::Replay(..) => self.replay_play(),
         };
         
         self.draw_top_bar(ctx);

@@ -4,14 +4,14 @@ use eframe::egui::{self, Key};
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
-use crate::{GameState, HanoiApp};
+use crate::{highscores::Score, GameState, HanoiApp};
 
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
 pub enum PlayerKind {
     #[default]
     Human,
     Bot,
-    Replay,
+    Replay(Score, usize),
 }
 
 impl HanoiApp {
@@ -83,6 +83,29 @@ impl HanoiApp {
                 (self.hanoi.end_pole.unwrap_or(self.hanoi.start_pole + 1)) % self.hanoi.poles_count,
             );
             self.state = GameState::Finished(start_time.elapsed());
+        }
+    }
+
+    pub fn replay_play(&mut self) {
+        if let PlayerKind::Replay(ref game, ref mut index) = self.player {
+            if let Some((time, from, to)) = game.moves.get(*index) {
+                match self.state {
+                    GameState::Playing(start) => {
+                        if start.elapsed() >= *time {
+                            self.hanoi.shift(*from, *to);
+                            *index += 1;
+                            if *index >= game.moves.len() {
+                                self.state = GameState::Finished(game.time);
+                            }
+                        }
+                    },
+                    _ => {}
+                }
+            }
+            if let GameState::Finished(_) = self.state {
+                self.player = PlayerKind::Human;
+                self.replays_window = true;
+            }
         }
     }
 }

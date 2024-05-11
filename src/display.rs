@@ -1,12 +1,13 @@
-use std::{fmt::Debug, time::Duration};
+use std::{fmt::Debug, time::{Duration, Instant}};
 
 use eframe::{egui::{self, vec2, Align, Align2, CentralPanel, Color32, ComboBox, Direction, FontId, Layout, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, epaint::Hsva};
+use egui_extras::{Column, TableBuilder};
 use once_cell::sync::Lazy;
 use pretty_duration::pretty_duration;
 use serde::{Deserialize, Serialize};
 use strum::{EnumIter, IntoEnumIterator};
 
-use crate::{hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, GameState, HanoiApp, APP_NAME};
+use crate::{hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, play::PlayerKind, GameState, HanoiApp, APP_NAME};
 
 const DISK_HEIGHT: f32 = 30.0;
 const DISK_WIDTH_MIN: f32 = 20.0;
@@ -61,8 +62,16 @@ impl HanoiApp {
                 });
                 ui.separator();
                 
+                if ui.button("Reset").clicked() {
+                    self.soft_reset();
+                }
+
                 if ui.button("Settings").clicked() {
                     self.settings_window = !self.settings_window;
+                }
+
+                if ui.button("Replays").clicked() {
+                    self.replays_window = !self.replays_window;
                 }
             });
         });
@@ -82,6 +91,7 @@ impl HanoiApp {
 
     pub fn draw_windows(&mut self, ctx: &egui::Context) {
         self.draw_settings_window(ctx);
+        self.draw_replays_window(ctx);
 
         if let GameState::Finished(end) = self.state {
             self.draw_completed_window(ctx, end);
@@ -186,8 +196,6 @@ impl HanoiApp {
         .open(&mut settings_window)
         .auto_sized()
         .show(ctx, |ui| {
-            ui.heading("Settings");
-
             let max_disks = if self.extra_mode { MAX_DISKS } else { MAX_DISKS_NORMAL };
             let max_poles = if self.extra_mode { MAX_POLES } else { MAX_POLES_NORMAL };
     
@@ -219,8 +227,7 @@ impl HanoiApp {
             });
             ui.checkbox(&mut self.show_poles, "Show poles");
             ui.checkbox(&mut self.disk_number, "Disk number");
-    
-            set_enum_setting(ui, &mut self.player);
+
             set_enum_setting(ui, &mut self.color_theme);
             set_enum_setting(ui, &mut self.poles_position);
     
@@ -267,6 +274,87 @@ impl HanoiApp {
 
         self.settings_window = settings_window;
     }
+
+    pub fn draw_replays_window(&mut self, ctx: &egui::Context) {
+        let mut replays_window = self.replays_window;
+
+        Window::new("Replays")
+        .open(&mut replays_window)
+        .show(ctx, |ui| {
+            let max_disks = if self.extra_mode { MAX_DISKS } else { MAX_DISKS_NORMAL };
+            let max_poles = if self.extra_mode { MAX_POLES } else { MAX_POLES_NORMAL };
+            ui.add(Slider::new(&mut self.replays_filter.disks, 1..=max_disks).text("Disks"));
+            {
+                let resp = ui.add(Slider::new(&mut self.replays_filter.poles, 2..=max_poles).text("Poles"));
+                if resp.changed {
+                    self.replays_filter.start_pole = self.replays_filter.start_pole.min(self.replays_filter.poles);
+                }
+                resp
+            };
+            ui.add(Slider::new(&mut self.replays_filter.start_pole, 1..=self.replays_filter.poles).text("Start pole"));
+            
+            let mut any_pole = self.replays_filter.end_pole.is_none();
+            ui.checkbox(&mut any_pole, "Any end pole");
+            if any_pole {
+                self.replays_filter.end_pole = None;
+            } else {
+                let end_pole = self.replays_filter.end_pole.get_or_insert(1);
+                ui.add(Slider::new(end_pole, 1..=self.replays_filter.poles).text("End pole"));
+            };
+
+            ui.checkbox(&mut self.replays_filter.illegal_moves, "Illegal moves");
+            ui.checkbox(&mut self.replays_filter.blindfold, "Blindfold");
+
+            ui.separator();
+
+            match self.highscores.get(&self.replays_filter) {
+                Some(games) if !games.is_empty() => {
+                    let col_def = Column::remainder().resizable(true);
+
+                    TableBuilder::new(ui)
+                    .column(col_def)
+                    .column(col_def)
+                    .column(col_def)
+                    .column(col_def)
+                    .header(30.0, |mut header| {
+                        header.col(|ui| { ui.heading("Time"); });
+                        header.col(|ui| { ui.heading("Moves"); });
+                        header.col(|ui| { ui.heading("Date"); });
+                        header.col(|ui| { ui.heading("Replay"); });
+                    })
+                    .body(|body| {
+                        body.rows(20.0, games.len(), |mut row| {
+                            let index = row.index();
+                            let game = &games[index];
+                            row.col(|ui| { ui.label(format!("{:.3?}s", game.time.as_secs_f64())); });
+                            row.col(|ui| { ui.label(format!("{} moves", game.moves.len())); });
+                            row.col(|ui| { ui.label(format!("{}", game.date)); });
+                            row.col(|ui| {
+                                if ui.button("Replay").clicked() {
+                                    self.replays_window = false;
+                                    self.player = PlayerKind::Replay(game.clone(), 0);
+                                    self.hanoi.disks_count = self.replays_filter.disks;
+                                    self.hanoi.poles_count = self.replays_filter.poles;
+                                    self.hanoi.start_pole = self.replays_filter.start_pole;
+                                    self.hanoi.end_pole = self.replays_filter.end_pole;
+                                    self.hanoi.illegal_moves = self.replays_filter.illegal_moves;
+                                    self.hanoi.reset();
+                                    self.blindfold = false;
+                                    self.state = GameState::Playing(Instant::now());
+                                }
+                            });
+                        });
+                    });
+                    
+                },
+                Some(_) | None => {
+                    ui.label("No replay with these settings");
+                },
+            }
+        });
+
+        self.replays_window = self.replays_window && replays_window;
+    } 
 
     pub fn draw_completed_window(&mut self, ctx: &egui::Context, duration: Duration) {
         Window::new("Game complete!")

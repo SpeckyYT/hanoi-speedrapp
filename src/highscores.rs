@@ -19,7 +19,20 @@ pub struct Header {
     pub end_pole: Option<usize>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
+impl Default for Header {
+    fn default() -> Self {
+        Header {
+            blindfold: false,
+            poles: 3,
+            disks: 5,
+            illegal_moves: false,
+            start_pole: 1,
+            end_pole: None,
+        }
+    }
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Score {
     pub time: Duration,
     #[serde(default)]
