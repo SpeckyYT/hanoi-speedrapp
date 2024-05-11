@@ -1,6 +1,6 @@
 use std::{fmt::Debug, time::Duration};
 
-use eframe::{egui::{self, vec2, Align, Align2, Color32, ComboBox, Direction, FontId, Layout, RichText, Sense, SidePanel, Slider, TopBottomPanel, Ui, Vec2, Window}, epaint::Hsva};
+use eframe::{egui::{self, vec2, Align, Align2, CentralPanel, Color32, ComboBox, Direction, FontId, Layout, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, epaint::Hsva};
 use once_cell::sync::Lazy;
 use pretty_duration::pretty_duration;
 use serde::{Deserialize, Serialize};
@@ -8,7 +8,6 @@ use strum::{EnumIter, IntoEnumIterator};
 
 use crate::{hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, GameState, HanoiApp, APP_NAME};
 
-const TOWERS_PANEL_ID: &str = "towers";
 const DISK_HEIGHT: f32 = 30.0;
 const DISK_WIDTH_MIN: f32 = 20.0;
 const POLE_WIDTH: f32 = 3.0;
@@ -69,10 +68,29 @@ impl HanoiApp {
         });
     }
 
-    pub fn draw_blindfold(&self, ctx: &egui::Context) {
-        SidePanel::right(TOWERS_PANEL_ID)
+    pub fn draw_central_panel(&mut self, ctx: &egui::Context) {
+        CentralPanel::default()
         .show(ctx, |ui| {
-            ui.label("[blindfold enabled]");
+            if self.blindfold {
+                self.draw_blindfold(ui);
+            } else {
+                self.draw_poles(ui);
+            }
+            self.draw_windows(ui.ctx());
+        });
+    }
+
+    pub fn draw_windows(&mut self, ctx: &egui::Context) {
+        self.draw_settings_window(ctx);
+
+        if let GameState::Finished(end) = self.state {
+            self.draw_completed_window(ctx, end);
+        }
+    }
+
+    pub fn draw_blindfold(&self, ui: &mut Ui) {
+        ui.centered_and_justified(|ui| {
+            ui.heading("[BLINDFOLD ENABLED]");
         });
     }
 
@@ -148,11 +166,25 @@ impl HanoiApp {
         );
     }
 
-    pub fn draw_settings(&mut self, ctx: &egui::Context) {
+    pub fn draw_state(&mut self, ui: &mut egui::Ui) {
+        ui.label(match self.state {
+            GameState::Reset => "Not started".to_string(),
+            GameState::Playing(start) => format!("{:.3?} seconds", start.elapsed().as_secs_f64()),
+            GameState::Finished(duration) => {
+                let seconds = duration.as_secs_f64();
+                let small_time = if seconds < 0.001 { format!("({:?})", duration) } else { "".to_string() };
+                format!("{seconds:.3?} seconds {small_time}")
+            },
+        });
+        ui.label(format!("Moves: {}/{} optimal", self.moves, self.hanoi.required_moves()));
+    }
+
+    pub fn draw_settings_window(&mut self, ctx: &egui::Context) {
         let mut settings_window = self.settings_window;
 
         Window::new("Settings")
         .open(&mut settings_window)
+        .auto_sized()
         .show(ctx, |ui| {
             ui.heading("Settings");
 
@@ -236,20 +268,7 @@ impl HanoiApp {
         self.settings_window = settings_window;
     }
 
-    pub fn draw_state(&mut self, ui: &mut egui::Ui) {
-        ui.label(match self.state {
-            GameState::Reset => "Not started".to_string(),
-            GameState::Playing(start) => format!("{:.3?} seconds", start.elapsed().as_secs_f64()),
-            GameState::Finished(duration) => {
-                let seconds = duration.as_secs_f64();
-                let small_time = if seconds < 0.001 { format!("({:?})", duration) } else { "".to_string() };
-                format!("{seconds:.3?} seconds {small_time}")
-            },
-        });
-        ui.label(format!("Moves: {}/{} optimal", self.moves, self.hanoi.required_moves()));
-    }
-
-    pub fn draw_completed(&mut self, ctx: &egui::Context, duration: Duration) {
+    pub fn draw_completed_window(&mut self, ctx: &egui::Context, duration: Duration) {
         Window::new("Game complete!")
         .collapsible(false)
         .auto_sized()

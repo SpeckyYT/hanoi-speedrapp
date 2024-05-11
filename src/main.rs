@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
 use display::{ColorTheme, PolesPosition};
-use eframe::{egui::{self, CentralPanel}, App, Frame, HardwareAcceleration, NativeOptions};
+use eframe::{egui, App, Frame, HardwareAcceleration, NativeOptions};
 use highscores::Highscores;
 use play::PlayerKind;
 use serde::{Deserialize, Serialize};
@@ -131,25 +131,11 @@ impl App for HanoiApp {
         };
         
         self.draw_top_bar(ctx);
+        self.draw_central_panel(ctx);
 
-        CentralPanel::default()
-        .show(ctx, |ui| {
-            self.draw_settings(ctx);
-
-            if self.blindfold {
-                self.draw_blindfold(ctx);
-            } else {
-                self.draw_poles(ui);
-            }
-
-            if let GameState::Finished(end) = self.state {
-                self.draw_completed(ctx, end);
-            }
-    
-            if matches!(self.state, GameState::Playing(_)) {
-                ctx.request_repaint();
-            }
-        });
+        if matches!(self.state, GameState::Playing(_)) {
+            ctx.request_repaint();
+        }
     }
 }
 
