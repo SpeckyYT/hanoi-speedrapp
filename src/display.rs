@@ -245,9 +245,8 @@ impl HanoiApp {
             }
     
             let required_moves = self.hanoi.required_moves();
-            let infinity = ["∞".to_string(), "∞".to_string()];
             let [expert_time_string, computer_time_string] = match required_moves {
-                RequiredMoves::Impossible => infinity,
+                RequiredMoves::Impossible => ["∞".to_string(), "∞".to_string()],
                 RequiredMoves::Count(moves) => {
                     let moves = (moves - 1) as f64;
                     let times = [
@@ -357,7 +356,7 @@ impl HanoiApp {
     } 
 
     pub fn draw_completed_window(&mut self, ctx: &egui::Context, duration: Duration) {
-        Window::new("Game complete!")
+        Window::new("🏆 Game complete!")
         .collapsible(false)
         .auto_sized()
         .show(ctx, |ui| {
@@ -377,8 +376,17 @@ impl HanoiApp {
                     required_moves as f64 / duration.as_secs_f64(),
                 ));
             }
-    
-            if let Some(highscore) = self.get_highscores_entry(self.get_current_header()).first() {
+
+            let highscores = self.get_highscores_entry(self.get_current_header());
+            
+            let highscore = highscores.first()
+            .and_then(|first| if first.time == duration {
+                highscores.get(1)
+            } else {
+                Some(first)
+            });
+
+            if let Some(highscore) = highscore {
                 ui.label(format!("Your best time: {:.3?} seconds", highscore.time.as_secs_f64()));
                 if duration > highscore.time {
                     ui.label(format!("High score difference: +{:.3?} seconds", (duration - highscore.time).as_secs_f64()));

@@ -1,11 +1,12 @@
 use eframe::egui::{self, Key, Modifiers};
 
-use crate::{GameState, HanoiApp};
+use crate::{play::PlayerKind, GameState, HanoiApp};
 
 impl HanoiApp {
     pub fn soft_reset(&mut self) {
         self.hanoi.reset();
         self.state = GameState::Reset;
+        self.player = PlayerKind::Human;
         self.moves = 0;
     }
 
