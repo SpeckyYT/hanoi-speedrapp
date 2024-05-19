@@ -2,6 +2,7 @@ use std::{fmt::Debug, time::{Duration, Instant}};
 
 use eframe::{egui::{self, vec2, Align, Align2, CentralPanel, Color32, ComboBox, Direction, FontId, Layout, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, epaint::Hsva};
 use egui_extras::{Column, TableBuilder};
+use egui_plot::{Bar, BarChart};
 use once_cell::sync::Lazy;
 use pretty_duration::pretty_duration;
 use serde::{Deserialize, Serialize};
@@ -222,8 +223,11 @@ impl HanoiApp {
                     ui.add(Slider::new(end_pole, 1..=self.hanoi.poles_count).text("End pole"));
                 };
     
-                ui.checkbox(&mut self.hanoi.illegal_moves, "Illegal moves");
-                ui.checkbox(&mut self.blindfold, "Blindfold");
+                check_changed!(
+                    self.soft_reset();
+                    ui.checkbox(&mut self.hanoi.illegal_moves, "Illegal moves");
+                    ui.checkbox(&mut self.blindfold, "Blindfold");
+                );
             });
             ui.checkbox(&mut self.show_poles, "Show poles");
             ui.checkbox(&mut self.disk_number, "Disk number");
@@ -306,52 +310,78 @@ impl HanoiApp {
 
             ui.separator();
 
-            match self.highscores.get(&self.replays_filter) {
-                Some(games) if !games.is_empty() => {
-                    let col_def = Column::remainder().resizable(true);
+            self.draw_highscores_graph(ui);
 
-                    TableBuilder::new(ui)
-                    .column(col_def)
-                    .column(col_def)
-                    .column(col_def)
-                    .column(col_def)
-                    .header(30.0, |mut header| {
-                        header.col(|ui| { ui.heading("Time"); });
-                        header.col(|ui| { ui.heading("Moves"); });
-                        header.col(|ui| { ui.heading("Date"); });
-                        header.col(|ui| { ui.heading("Replay"); });
-                    })
-                    .body(|body| {
-                        body.rows(20.0, games.len(), |mut row| {
-                            let index = row.index();
-                            let game = &games[index];
-                            row.col(|ui| { ui.label(format!("{:.3?}s", game.time.as_secs_f64())); });
-                            row.col(|ui| { ui.label(format!("{} moves", game.moves.len())); });
-                            row.col(|ui| { ui.label(game.date.format("%Y/%m/%d %H:%M:%S").to_string()); });
-                            row.col(|ui| {
-                                if ui.button("Replay").clicked() {
-                                    self.player = PlayerKind::Replay(game.clone(), 0);
-                                    self.hanoi.disks_count = self.replays_filter.disks;
-                                    self.hanoi.poles_count = self.replays_filter.poles;
-                                    self.hanoi.start_pole = self.replays_filter.start_pole;
-                                    self.hanoi.end_pole = self.replays_filter.end_pole;
-                                    self.hanoi.illegal_moves = self.replays_filter.illegal_moves;
-                                    self.hanoi.reset();
-                                    self.state = GameState::Playing(Instant::now());
-                                }
-                            });
-                        });
-                    });
-                    
-                },
-                Some(_) | None => {
-                    ui.label("No replay with these settings");
-                },
-            }
+            ui.separator();
+
+            self.draw_highscores_table(ui);
         });
 
         self.replays_window = self.replays_window && replays_window;
     } 
+
+    pub fn draw_highscores_graph(&mut self, ui: &mut Ui) {
+        egui_plot::Plot::new("highscores_plot")
+            .height(128.0)
+            .show_axes(false)
+            .data_aspect(1.0)
+            .show(ui, |plot_ui| plot_ui.bar_chart(BarChart::new(
+                match self.highscores.get(&self.replays_filter) {
+                    Some(scores) =>
+                        scores
+                            .iter()
+                            .enumerate()
+                            .map(|(i, score)| Bar::new((i + 1) as f64, score.time.as_secs_f64()))
+                            .collect(),
+                    None => vec![],
+                }
+            )));
+    }
+
+    pub fn draw_highscores_table(&mut self, ui: &mut Ui) {
+        match self.highscores.get(&self.replays_filter) {
+            Some(games) if !games.is_empty() => {
+                let col_def = Column::remainder().resizable(true);
+
+                TableBuilder::new(ui)
+                .column(col_def)
+                .column(col_def)
+                .column(col_def)
+                .column(col_def)
+                .header(30.0, |mut header| {
+                    header.col(|ui| { ui.heading("Time"); });
+                    header.col(|ui| { ui.heading("Moves"); });
+                    header.col(|ui| { ui.heading("Date"); });
+                    header.col(|ui| { ui.heading("Replay"); });
+                })
+                .body(|body| {
+                    body.rows(20.0, games.len(), |mut row| {
+                        let index = row.index();
+                        let game = &games[index];
+                        row.col(|ui| { ui.label(format!("{:.3?}s", game.time.as_secs_f64())); });
+                        row.col(|ui| { ui.label(format!("{} moves", game.moves.len())); });
+                        row.col(|ui| { ui.label(game.date.format("%Y/%m/%d %H:%M:%S").to_string()); });
+                        row.col(|ui| {
+                            if ui.button("Replay").clicked() {
+                                self.player = PlayerKind::Replay(game.clone(), 0);
+                                self.hanoi.disks_count = self.replays_filter.disks;
+                                self.hanoi.poles_count = self.replays_filter.poles;
+                                self.hanoi.start_pole = self.replays_filter.start_pole;
+                                self.hanoi.end_pole = self.replays_filter.end_pole;
+                                self.hanoi.illegal_moves = self.replays_filter.illegal_moves;
+                                self.hanoi.reset();
+                                self.state = GameState::Playing(Instant::now());
+                            }
+                        });
+                    });
+                });
+                
+            },
+            Some(_) | None => {
+                ui.label("No replay with these settings");
+            },
+        }
+    }
 
     pub fn draw_completed_window(&mut self, ctx: &egui::Context, duration: Duration) {
         Window::new("🏆 Game complete!")
