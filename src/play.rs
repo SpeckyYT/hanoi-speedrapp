@@ -15,23 +15,28 @@ pub enum PlayerKind {
 }
 
 impl HanoiApp {
+    pub fn full_move(&mut self, from: usize, to: usize) {
+        if !matches!(self.state, GameState::Finished(_)) {
+            if self.hanoi.shift(from, to) {
+                if self.state == GameState::Reset {
+                    self.state = GameState::Playing(Instant::now());
+                }
+                self.moves += 1;
+                if let GameState::Playing(time) = self.state {
+                    self.hanoi.moves_history.push((time.elapsed(), from, to));
+                }
+            }
+        }
+    }
+
     pub fn player_play(&mut self, ctx: &egui::Context) {
         ctx.input(|i| {
             macro_rules! inputs {
                 ($($k:ident: $f:literal => $t:literal)*) => {
                     $(
                         if i.key_pressed(Key::$k) {
-                            if !matches!(self.state, GameState::Finished(_)) {
-                                if self.hanoi.shift($f - 1, $t - 1) {
-                                    if self.state == GameState::Reset {
-                                        self.state = GameState::Playing(Instant::now());
-                                    }
-                                    self.moves += 1;
-                                    if let GameState::Playing(time) = self.state {
-                                        self.hanoi.moves_history.push((time.elapsed(), $f - 1, $t - 1));
-                                    }
-                                }
-                            }
+                            self.full_move($f - 1, $t - 1);
+                            self.undo_index = self.hanoi.moves_history.len();
                         }
                     )*
                 };
@@ -46,8 +51,12 @@ impl HanoiApp {
                 K: 3 => 2
             );
 
-            if i.key_pressed(Key::R) {
-                self.soft_reset();
+            if i.key_pressed(Key::Z) {
+                println!("{}", self.undo_index);
+                if let Some((_, from, to)) = self.undo_index.checked_sub(1).map(|i| self.hanoi.moves_history[i]) {
+                    self.full_move(to, from);
+                    self.undo_index -= 1;
+                }
             }
         });
 

@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
 use display::{ColorTheme, PolesPosition};
-use eframe::{egui, App, Frame, HardwareAcceleration, NativeOptions};
+use eframe::{egui::{self, Key}, App, Frame, HardwareAcceleration, NativeOptions};
 use highscores::{Header, Highscores};
 use play::PlayerKind;
 use serde::{Deserialize, Serialize};
@@ -41,6 +41,8 @@ struct HanoiApp {
     state: GameState,
     #[serde(default)]
     moves: u128,
+    #[serde(default)]
+    undo_index: usize,
 
     // display
     #[serde(default = "falsy")]
@@ -77,6 +79,7 @@ impl Default for HanoiApp {
             player: PlayerKind::Human,
             state: GameState::Reset,
             moves: 0,
+            undo_index: 0,
 
             blindfold: false,
             show_poles: true,
@@ -136,6 +139,13 @@ impl App for HanoiApp {
             PlayerKind::Replay(..) => self.replay_play(),
         };
         
+
+        ctx.input(|i| {
+            if i.key_pressed(Key::R) {
+                self.soft_reset();
+            }
+        });
+
         self.draw_top_bar(ctx);
         self.draw_central_panel(ctx);
 

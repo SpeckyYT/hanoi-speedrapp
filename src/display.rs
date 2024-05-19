@@ -327,7 +327,7 @@ impl HanoiApp {
                             let game = &games[index];
                             row.col(|ui| { ui.label(format!("{:.3?}s", game.time.as_secs_f64())); });
                             row.col(|ui| { ui.label(format!("{} moves", game.moves.len())); });
-                            row.col(|ui| { ui.label(format!("{}", game.date)); });
+                            row.col(|ui| { ui.label(game.date.format("%Y/%m/%d %H:%M:%S").to_string()); });
                             row.col(|ui| {
                                 if ui.button("Replay").clicked() {
                                     self.replays_window = false;
