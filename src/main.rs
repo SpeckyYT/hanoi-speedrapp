@@ -6,7 +6,7 @@ use highscores::{Header, Highscores};
 use play::PlayerKind;
 use serde::{Deserialize, Serialize};
 use hanoi::HanoiGame;
-use util::{falsy, truthy};
+use util::*;
 
 mod hanoi;
 mod display;
@@ -56,6 +56,14 @@ struct HanoiApp {
     #[serde(default)]
     poles_position: PolesPosition,
 
+    // input
+    #[serde(default = "reset_key")]
+    reset_key: Key,
+    #[serde(default = "undo_key")]
+    undo_key: Key,
+    #[serde(default = "quick_keys")]
+    quick_keys: Vec<(Key, usize, usize)>,
+
     // windows
     #[serde(default = "falsy")]
     settings_window: bool,
@@ -86,6 +94,10 @@ impl Default for HanoiApp {
             disk_number: false,
             color_theme: ColorTheme::Rainbow,
             poles_position: PolesPosition::Bottom,
+
+            reset_key: reset_key(),
+            undo_key: undo_key(),
+            quick_keys: quick_keys(),
 
             settings_window: false,
             replays_window: false,
@@ -138,10 +150,9 @@ impl App for HanoiApp {
             PlayerKind::Bot => self.bot_play(),
             PlayerKind::Replay(..) => self.replay_play(),
         };
-        
 
         ctx.input(|i| {
-            if i.key_pressed(Key::R) {
+            if i.key_pressed(self.reset_key) {
                 self.soft_reset();
             }
         });

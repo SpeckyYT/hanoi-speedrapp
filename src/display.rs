@@ -80,7 +80,7 @@ impl HanoiApp {
     pub fn draw_central_panel(&mut self, ctx: &egui::Context) {
         CentralPanel::default()
         .show(ctx, |ui| {
-            if self.blindfold {
+            if self.blindfold && matches!((&self.player, &self.state), (PlayerKind::Human, GameState::Playing(_))) {
                 self.draw_blindfold(ui);
             } else {
                 self.draw_poles(ui);
@@ -330,7 +330,6 @@ impl HanoiApp {
                             row.col(|ui| { ui.label(game.date.format("%Y/%m/%d %H:%M:%S").to_string()); });
                             row.col(|ui| {
                                 if ui.button("Replay").clicked() {
-                                    self.replays_window = false;
                                     self.player = PlayerKind::Replay(game.clone(), 0);
                                     self.hanoi.disks_count = self.replays_filter.disks;
                                     self.hanoi.poles_count = self.replays_filter.poles;
@@ -338,7 +337,6 @@ impl HanoiApp {
                                     self.hanoi.end_pole = self.replays_filter.end_pole;
                                     self.hanoi.illegal_moves = self.replays_filter.illegal_moves;
                                     self.hanoi.reset();
-                                    self.blindfold = false;
                                     self.state = GameState::Playing(Instant::now());
                                 }
                             });

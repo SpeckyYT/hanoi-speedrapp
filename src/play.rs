@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use eframe::egui::{self, Key};
+use eframe::egui;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
@@ -31,28 +31,14 @@ impl HanoiApp {
 
     pub fn player_play(&mut self, ctx: &egui::Context) {
         ctx.input(|i| {
-            macro_rules! inputs {
-                ($($k:ident: $f:literal => $t:literal)*) => {
-                    $(
-                        if i.key_pressed(Key::$k) {
-                            self.full_move($f - 1, $t - 1);
-                            self.undo_index = self.hanoi.moves_history.len();
-                        }
-                    )*
-                };
+            for (key, from, to) in self.quick_keys.clone() { // todo: find a way to remove the clone
+                if i.key_pressed(key) {
+                    self.full_move(from - 1, to - 1);
+                    self.undo_index = self.hanoi.moves_history.len();
+                }
             }
 
-            inputs!(
-                D: 1 => 2
-                F: 1 => 3
-                S: 2 => 1
-                L: 2 => 3
-                J: 3 => 1
-                K: 3 => 2
-            );
-
-            if i.key_pressed(Key::Z) {
-                println!("{}", self.undo_index);
+            if i.key_pressed(self.undo_key) {
                 if let Some((_, from, to)) = self.undo_index.checked_sub(1).map(|i| self.hanoi.moves_history[i]) {
                     self.full_move(to, from);
                     self.undo_index -= 1;
@@ -113,7 +99,6 @@ impl HanoiApp {
             }
             if let GameState::Finished(_) = self.state {
                 self.player = PlayerKind::Human;
-                self.replays_window = true;
             }
         }
     }

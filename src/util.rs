@@ -36,3 +36,18 @@ impl HanoiApp {
 
 pub const fn truthy() -> bool { true }
 pub const fn falsy() -> bool { false }
+
+pub const fn reset_key() -> Key { Key::R }
+pub const fn undo_key() -> Key { Key::Z }
+
+pub fn quick_keys() -> Vec<(Key, usize, usize)> {
+    use Key::*;
+    vec![
+        (D, 1, 2),
+        (F, 1, 3),
+        (S, 2, 1),
+        (L, 2, 3),
+        (J, 3, 1),
+        (K, 3, 2),
+    ]
+}
