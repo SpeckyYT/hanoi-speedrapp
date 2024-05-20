@@ -28,6 +28,7 @@ pub enum ColorTheme {
     #[default]
     Rainbow,
     Purple,
+    Sites,
 }
 
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
@@ -152,6 +153,15 @@ impl HanoiApp {
                             } else {
                                 Color32::from_rgb(134, 88, 154)
                             }
+                        },
+                        ColorTheme::Sites => {
+                            const COLORS: &[Color32] = &[
+                                Color32::from_rgb(170, 229, 164),   // rule
+                                Color32::from_rgb(1, 46, 87),       // e
+                                Color32::from_rgb(30, 30, 44),      // dan
+                                Color32::from_rgb(247, 152, 23),    // hub
+                            ];
+                            COLORS[(disk_number - 1) % COLORS.len()]
                         },
                     };
                     painter.rect_filled(response.rect, disk_height / 2.5, color);
@@ -402,6 +412,7 @@ impl HanoiApp {
                         row.col(|ui| {
                             if ui.button("Replay").clicked() {
                                 self.player = PlayerKind::Replay(game.clone(), 0);
+                                self.moves = 0;
                                 self.hanoi.disks_count = self.replays_filter.disks;
                                 self.hanoi.poles_count = self.replays_filter.poles;
                                 self.hanoi.start_pole = self.replays_filter.start_pole;

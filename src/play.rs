@@ -95,6 +95,7 @@ impl HanoiApp {
                         if start.elapsed() >= *time {
                             self.hanoi.shift(*from, *to);
                             *index += 1;
+                            self.moves += 1;
                             if *index >= game.moves.len() {
                                 self.state = GameState::Finished(game.time);
                             }
