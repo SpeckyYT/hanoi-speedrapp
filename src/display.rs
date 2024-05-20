@@ -1,6 +1,6 @@
-use std::{fmt::Debug, time::{Duration, Instant}};
+use std::{fmt::Debug, str::FromStr, time::{Duration, Instant}};
 
-use eframe::{egui::{self, vec2, Align, Align2, CentralPanel, Color32, ComboBox, Direction, FontId, Layout, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, epaint::Hsva};
+use eframe::{egui::{self, vec2, Align, Align2, CentralPanel, Color32, ComboBox, Direction, Event, FontId, Key, Layout, Response, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, epaint::Hsva};
 use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
 use once_cell::sync::Lazy;
@@ -61,9 +61,16 @@ impl HanoiApp {
                 ui.vertical(|ui| {
                     self.draw_state(ui);
                 });
+
                 ui.separator();
                 
-                if ui.button("Reset").clicked() {
+                if ui.button(format!("Undo ({:?})", self.undo_key)).clicked() {
+                    if matches!((&self.player, &self.state), (PlayerKind::Human, GameState::Playing(_))) {
+                        self.undo_move();
+                    }
+                }
+
+                if ui.button(format!("Reset ({:?})", self.reset_key)).clicked() {
                     self.soft_reset();
                 }
 
@@ -235,9 +242,40 @@ impl HanoiApp {
             set_enum_setting(ui, &mut self.color_theme);
             set_enum_setting(ui, &mut self.poles_position);
     
+            ui.collapsing("Hotkeys", |ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Undo");
+                    key_input(ui, &mut self.undo_key);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Reset");
+                    key_input(ui, &mut self.reset_key);
+                });
+
+                ui.label("Quick keys");
+                self.quick_keys.retain_mut(|(key, from, to)| {
+                    // todo: drag and drop to change the order
+                    ui.horizontal(|ui| {
+                        key_input(ui, key);
+                        integer_input(ui, from);
+                        integer_input(ui, to);
+                        !ui.button("-").clicked()
+                    })
+                    .inner
+                });
+
+                if ui.button("+").clicked() {
+                    self.quick_keys.push((Key::A, 1, 1));
+                }
+            });
+
+            ui.separator();
+
             ui.add_enabled_ui(!matches!(self.state, GameState::Playing(_)) && !self.equal_settings(&DEFAULT_HANOI_APP), |ui| {
                 if ui.button("Default Settings").clicked() {
+                    let highscores = self.highscores.clone();
                     *self = (*DEFAULT_HANOI_APP).clone();
+                    self.highscores = highscores;
                 }
             });
     
@@ -425,6 +463,29 @@ impl HanoiApp {
             }
         });
     }
+}
+
+fn key_input(ui: &mut Ui, key: &mut Key) -> Response {
+    let mut from_string = format!("{:?}", key);
+    let resp = ui.text_edit_singleline(&mut from_string);
+    if resp.has_focus() {
+        ui.input(|i| for event in &i.events {
+            match event {
+                Event::Key { key: pkey, .. } => *key = *pkey,
+                _ => {}
+            }
+        })
+    }
+    resp
+}
+
+fn integer_input<T: ToString + FromStr>(ui: &mut Ui, input: &mut T) -> Response {
+    let mut from_string = input.to_string(); 
+    let resp = ui.text_edit_singleline(&mut from_string);
+    if let Ok(parsed) = from_string.parse() {
+        *input = parsed;
+    }
+    resp
 }
 
 fn set_enum_setting<T>(ui: &mut Ui, selected: &mut T)

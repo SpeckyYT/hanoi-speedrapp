@@ -38,10 +38,9 @@ impl HanoiApp {
                 }
             }
 
-            if i.key_pressed(self.undo_key) {
-                if let Some((_, from, to)) = self.undo_index.checked_sub(1).map(|i| self.hanoi.moves_history[i]) {
-                    self.full_move(to, from);
-                    self.undo_index -= 1;
+            if matches!((&self.player, &self.state), (PlayerKind::Human, GameState::Playing(_))) {
+                if i.key_pressed(self.undo_key) {
+                    self.undo_move();
                 }
             }
         });
@@ -53,6 +52,13 @@ impl HanoiApp {
                 self.save_score(elapsed);
             },
             _ => {},
+        }
+    }
+
+    pub fn undo_move(&mut self) {
+        if let Some((_, from, to)) = self.undo_index.checked_sub(1).and_then(|i| self.hanoi.moves_history.get(i)) {
+            self.full_move(*to, *from);
+            self.undo_index -= 1;
         }
     }
 
