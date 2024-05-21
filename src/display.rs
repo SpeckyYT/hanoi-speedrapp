@@ -1,8 +1,9 @@
-use std::{fmt::Debug, str::FromStr, time::{Duration, Instant}};
+use std::{fmt::Debug, str::FromStr, sync::Arc, time::{Duration, Instant}};
 
-use eframe::{egui::{self, vec2, Align, Align2, CentralPanel, Color32, ComboBox, Direction, Event, FontId, Key, Layout, Response, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, epaint::Hsva};
+use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, CentralPanel, Color32, ComboBox, Direction, Event, FontId, Key, Layout, Response, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, epaint::Hsva};
 use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
+use indoc::formatdoc;
 use once_cell::sync::Lazy;
 use pretty_duration::pretty_duration;
 use serde::{Deserialize, Serialize};
@@ -16,6 +17,7 @@ const POLE_WIDTH: f32 = 3.0;
 const POLE_COLOR: Color32 = Color32::WHITE;
 const TEXT_COLOR: Color32 = Color32::WHITE;
 const TEXT_OUTLINE_COLOR: Color32 = Color32::BLACK;
+const SHARE_BUTTON_DURATION: Duration = Duration::from_millis(1000);
 
 static DEFAULT_HANOI_APP: Lazy<HanoiApp> = Lazy::new(|| {
     let mut hanoi_app = HanoiApp::default();
@@ -25,8 +27,8 @@ static DEFAULT_HANOI_APP: Lazy<HanoiApp> = Lazy::new(|| {
 
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
 pub enum ColorTheme {
-    #[default]
     Rainbow,
+    #[default]
     Purple,
     Sites,
 }
@@ -58,7 +60,13 @@ impl HanoiApp {
                 ui.heading(APP_NAME);
                 
                 ui.separator();
-                
+
+                // put the rest on the right or something
+
+                ui.separator();
+
+                self.share_button(ui);
+
                 ui.vertical(|ui| {
                     self.draw_state(ui);
                 });
@@ -474,6 +482,65 @@ impl HanoiApp {
             }
         });
     }
+
+    fn share_button(&self, ui: &mut Ui) {
+        if let GameState::Finished(time) = self.state {
+            let required_moves = self.hanoi.required_moves().to_number();
+            let time_f64 = time.as_secs_f64();
+            
+            static LAST_SHARE: Lazy<Arc<Mutex<(u8, Instant)>>> = Lazy::new(|| Arc::new(Mutex::new((0, Instant::now()))));
+    
+            let button_text = match *LAST_SHARE.lock() {
+                (2, instant) if instant.elapsed() < SHARE_BUTTON_DURATION => "Copied to clipboard!",
+                (1, instant) if instant.elapsed() < SHARE_BUTTON_DURATION => "Failed to copy...",
+                _ => "Share",
+            };
+    
+            if ui.button(button_text).clicked() {
+                let poles_line;
+    
+                let share_text = formatdoc!(
+                    "
+                        ⬛⬛🟪⬛⬛
+                        ⬛⬜⬜⬜⬛
+                        🟪🟪🟪🟪🟪
+                        {APP_NAME} Result:
+                        🥞 {} disks
+                        ⏱️ {:.3?} seconds
+                        🎲 {}/{} moves
+                        🏎️ {:.2?} optimal moves/second
+                        {}
+                    ",
+                    self.hanoi.disks_count,
+                    time_f64,
+                    self.moves, required_moves,
+                    required_moves as f64 / time_f64,
+                    [
+                        {
+                            poles_line = format!("🗼 {} poles", self.hanoi.poles_count);
+                            (self.hanoi.poles_count != 3).then_some(poles_line.as_str())
+                        },
+                        (self.moves <= required_moves).then_some("💯 Optimal solution"),
+                        self.blindfold.then_some("😎 Blindfolded"),
+                        self.hanoi.illegal_moves.then_some("👮 Illegal moves"),
+                        // Some("🤣 0 bitches"),
+                    ]
+                        .into_iter()
+                        .filter_map(|a| a)
+                        .collect::<Vec<&str>>()
+                        .join("\n"),
+                );
+    
+                let result = if let Ok(mut clipboard) = arboard::Clipboard::new() {
+                    clipboard.set_text(share_text).is_ok()
+                } else {
+                    false
+                } as u8 + 1;
+    
+                *LAST_SHARE.lock() = (result, Instant::now());
+            }
+        }
+    }    
 }
 
 fn key_input(ui: &mut Ui, key: &mut Key) -> Response {
