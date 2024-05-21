@@ -7,6 +7,7 @@ pub const MAX_POLES_NORMAL: usize = 9;
 use std::fmt::Display;
 
 use arrayvec::ArrayVec;
+use cached::proc_macro::cached;
 use serde::{Deserialize, Serialize};
 
 use crate::highscores::Move;
@@ -57,17 +58,12 @@ impl HanoiGame {
         }
     }
     pub fn required_moves(&self) -> RequiredMoves {
-        if self.poles_count < 3 && self.disks_count > 1 {
-            return RequiredMoves::Impossible
+        let result = frame_stewart(self.disks_count, self.poles_count);
+
+        match result {
+            Some(count) => RequiredMoves::Count(count),
+            None => RequiredMoves::Impossible,
         }
-
-        let required_moves = if self.end_pole == Some(self.start_pole) {
-            2
-        } else {
-            2u128.pow(self.disks_count as u32) - 1
-        };
-
-        RequiredMoves::Count(required_moves)
     }
     pub fn finished(&self) -> bool {
         let end = ArrayVec::from_iter((1..=self.disks_count).rev());
@@ -82,6 +78,26 @@ impl HanoiGame {
             }
             false
         }
+    }
+}
+
+#[cached]
+fn frame_stewart(disks: usize, poles: usize) -> Option<u128> {
+    match (disks, poles) {
+        (0, _) => Some(0),
+        (1, p) if p > 1 => Some(1),
+        (d, 3) => Some(2_u128.pow(d as u32) - 1),
+        (_, p) if p > 3 => {
+            let mut min: Option<u128> = None;
+            for i in 0..disks {
+                if let (Some(first), Some(second)) = (frame_stewart(i, poles), frame_stewart(disks - i, poles - 1)) {
+                    let moves = 2 * first + second;
+                    min = Some(min.map_or(moves, |current| current.min(moves)));
+                }
+            }
+            min
+        }
+        _ => None,
     }
 }
 
