@@ -1,6 +1,6 @@
-use std::{fmt::Debug, str::FromStr, sync::Arc, time::{Duration, Instant}};
+use std::{fmt::Debug, sync::Arc, time::{Duration, Instant}};
 
-use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, CentralPanel, Color32, ComboBox, Direction, Event, FontId, Key, Layout, Response, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, epaint::Hsva};
+use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Key, Layout, Response, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric, epaint::Hsva};
 use egui_dnd::Dnd;
 use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
@@ -275,8 +275,8 @@ impl HanoiApp {
                     ui.horizontal(|ui| {
                         handle.ui(ui, |ui| {
                             key_input(ui, key);
-                            integer_input(ui, from);
-                            integer_input(ui, to);
+                            integer_input(ui, from, self.extra_mode);
+                            integer_input(ui, to, self.extra_mode);
                         });
                         if ui.button("-").clicked() {
                             // self.quick_keys.remove(state.index);
@@ -559,12 +559,12 @@ fn key_input(ui: &mut Ui, key: &mut Key) -> Response {
     resp
 }
 
-fn integer_input<T: ToString + FromStr>(ui: &mut Ui, input: &mut T) -> Response {
-    let mut from_string = input.to_string(); 
-    let resp = ui.text_edit_singleline(&mut from_string);
-    if let Ok(parsed) = from_string.parse() {
-        *input = parsed;
-    }
+fn integer_input<T: Numeric>(ui: &mut Ui, input: &mut T, extra_mode: bool) -> Response {
+    let resp = ui.add(
+        DragValue::new(input)
+            .speed(0.0)
+            .clamp_range(0..=(if extra_mode { MAX_DISKS } else { MAX_DISKS_NORMAL }))
+    );
     resp
 }
 
