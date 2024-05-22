@@ -73,10 +73,8 @@ impl HanoiApp {
 
                 ui.separator();
                 
-                if ui.button(format!("Undo ({:?})", self.undo_key)).clicked() {
-                    if matches!((&self.player, &self.state), (PlayerKind::Human, GameState::Playing(_))) {
-                        self.undo_move();
-                    }
+                if ui.button(format!("Undo ({:?})", self.undo_key)).clicked() && matches!((&self.player, &self.state), (PlayerKind::Human, GameState::Playing(_))) {
+                    self.undo_move();
                 }
 
                 if ui.button(format!("Reset ({:?})", self.reset_key)).clicked() {
@@ -526,7 +524,7 @@ impl HanoiApp {
                         // Some("🤣 0 bitches"),
                     ]
                         .into_iter()
-                        .filter_map(|a| a)
+                        .flatten()
                         .collect::<Vec<&str>>()
                         .join("\n"),
                 );
@@ -548,9 +546,8 @@ fn key_input(ui: &mut Ui, key: &mut Key) -> Response {
     let resp = ui.text_edit_singleline(&mut from_string);
     if resp.has_focus() {
         ui.input(|i| for event in &i.events {
-            match event {
-                Event::Key { key: pkey, .. } => *key = *pkey,
-                _ => {}
+            if let Event::Key { key: pkey, ..} = event {
+                *key = *pkey;
             }
         })
     }

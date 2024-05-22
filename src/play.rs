@@ -16,15 +16,13 @@ pub enum PlayerKind {
 
 impl HanoiApp {
     pub fn full_move(&mut self, from: usize, to: usize) {
-        if !matches!(self.state, GameState::Finished(_)) {
-            if self.hanoi.shift(from, to) {
-                if self.state == GameState::Reset {
-                    self.state = GameState::Playing(Instant::now());
-                }
-                self.moves += 1;
-                if let GameState::Playing(time) = self.state {
-                    self.hanoi.moves_history.push((time.elapsed(), from, to));
-                }
+        if !matches!(self.state, GameState::Finished(_)) && self.hanoi.shift(from, to) {
+            if self.state == GameState::Reset {
+                self.state = GameState::Playing(Instant::now());
+            }
+            self.moves += 1;
+            if let GameState::Playing(time) = self.state {
+                self.hanoi.moves_history.push((time.elapsed(), from, to));
             }
         }
     }
@@ -38,10 +36,8 @@ impl HanoiApp {
                 }
             }
 
-            if matches!((&self.player, &self.state), (PlayerKind::Human, GameState::Playing(_))) {
-                if i.key_pressed(self.undo_key) {
-                    self.undo_move();
-                }
+            if matches!((&self.player, &self.state), (PlayerKind::Human, GameState::Playing(_))) && i.key_pressed(self.undo_key) {
+                self.undo_move();
             }
         });
 
@@ -90,18 +86,15 @@ impl HanoiApp {
     pub fn replay_play(&mut self) {
         if let PlayerKind::Replay(ref game, ref mut index) = self.player {
             if let Some((time, from, to)) = game.moves.get(*index) {
-                match self.state {
-                    GameState::Playing(start) => {
-                        if start.elapsed() >= *time {
-                            self.hanoi.shift(*from, *to);
-                            *index += 1;
-                            self.moves += 1;
-                            if *index >= game.moves.len() {
-                                self.state = GameState::Finished(game.time);
-                            }
+                if let GameState::Playing(start) = self.state {
+                    if start.elapsed() >= *time {
+                        self.hanoi.shift(*from, *to);
+                        *index += 1;
+                        self.moves += 1;
+                        if *index >= game.moves.len() {
+                            self.state = GameState::Finished(game.time);
                         }
-                    },
-                    _ => {}
+                    }
                 }
             }
             if let GameState::Finished(_) = self.state {
