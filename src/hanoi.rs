@@ -14,13 +14,15 @@ use crate::highscores::Move;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HanoiGame {
+    #[serde(skip)]
     pub poles: [ArrayVec<usize, MAX_DISKS>; MAX_POLES],
     pub poles_count: usize,
     pub disks_count: usize,
     pub start_pole: usize,
     pub end_pole: Option<usize>,
     pub illegal_moves: bool,
-    pub moves_history: Vec<Move>
+    #[serde(skip)]
+    pub moves_history: Vec<Move>,
 }
 
 impl HanoiGame {
@@ -40,6 +42,7 @@ impl HanoiGame {
         hanoi
     }
     pub fn shift(&mut self, from: usize, to: usize) -> bool {
+        if from == to { return false }
         if let Some(&from_last) = self.poles[from].last() {
             if self.illegal_moves || from_last < *self.poles[to].last().unwrap_or(&usize::MAX) {
                 let disk = self.poles[from].pop().unwrap();

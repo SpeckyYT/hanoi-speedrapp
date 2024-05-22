@@ -1,6 +1,7 @@
 use std::{fmt::Debug, str::FromStr, sync::Arc, time::{Duration, Instant}};
 
 use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, CentralPanel, Color32, ComboBox, Direction, Event, FontId, Key, Layout, Response, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, epaint::Hsva};
+use egui_dnd::Dnd;
 use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
 use indoc::formatdoc;
@@ -269,15 +270,19 @@ impl HanoiApp {
                 });
 
                 ui.label("Quick keys");
-                self.quick_keys.retain_mut(|(key, from, to)| {
-                    // todo: drag and drop to change the order
+                
+                Dnd::new(ui, "dnd_quick_keys").show_vec(&mut self.quick_keys, |ui, (key, from, to), handle, _state| {
                     ui.horizontal(|ui| {
-                        key_input(ui, key);
-                        integer_input(ui, from);
-                        integer_input(ui, to);
-                        !ui.button("-").clicked()
+                        handle.ui(ui, |ui| {
+                            key_input(ui, key);
+                            integer_input(ui, from);
+                            integer_input(ui, to);
+                        });
+                        if ui.button("-").clicked() {
+                            // self.quick_keys.remove(state.index);
+                        }
                     })
-                    .inner
+                    .inner;
                 });
 
                 if ui.button("+").clicked() {
