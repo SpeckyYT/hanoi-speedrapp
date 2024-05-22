@@ -84,16 +84,16 @@ impl Default for HanoiApp {
     fn default() -> Self {
         Self {
             hanoi: Default::default(),
-            player: PlayerKind::Human,
-            state: GameState::Reset,
+            player: Default::default(),
+            state: Default::default(),
             moves: 0,
             undo_index: 0,
 
             blindfold: false,
             show_poles: true,
             disk_number: false,
-            color_theme: ColorTheme::Rainbow,
-            poles_position: PolesPosition::Bottom,
+            color_theme: Default::default(),
+            poles_position: Default::default(),
 
             reset_key: reset_key(),
             undo_key: undo_key(),
