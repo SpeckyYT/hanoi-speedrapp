@@ -16,13 +16,17 @@ pub enum PlayerKind {
 
 impl HanoiApp {
     pub fn full_move(&mut self, from: usize, to: usize) {
-        if !matches!(self.state, GameState::Finished(_)) && self.hanoi.shift(from, to) {
-            if self.state == GameState::Reset {
-                self.state = GameState::Playing(Instant::now());
-            }
-            self.moves += 1;
-            if let GameState::Playing(time) = self.state {
-                self.hanoi.moves_history.push((time.elapsed(), from, to));
+        if !matches!(self.state, GameState::Finished(_)) {
+            if self.hanoi.shift(from, to) {
+                if self.state == GameState::Reset {
+                    self.state = GameState::Playing(Instant::now());
+                }
+                self.moves += 1;
+                if let GameState::Playing(time) = self.state {
+                    self.hanoi.moves_history.push((time.elapsed(), from, to));
+                }
+            } else if self.reset_on_invalid_move {
+                self.soft_reset();
             }
         }
     }

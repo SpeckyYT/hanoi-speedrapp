@@ -256,6 +256,8 @@ impl HanoiApp {
             ui.checkbox(&mut self.show_poles, "Show poles");
             ui.checkbox(&mut self.disk_number, "Disk number");
 
+            ui.checkbox(&mut self.reset_on_invalid_move, "Reset on invalid move");
+
             set_enum_setting(ui, &mut self.color_theme);
             set_enum_setting(ui, &mut self.poles_position);
     
@@ -281,8 +283,7 @@ impl HanoiApp {
                         if ui.button("-").clicked() {
                             // self.quick_keys.remove(state.index);
                         }
-                    })
-                    .inner;
+                    });
                 });
 
                 if ui.button("+").clicked() {

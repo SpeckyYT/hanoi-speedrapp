@@ -43,6 +43,8 @@ struct HanoiApp {
     moves: u128,
     #[serde(default)]
     undo_index: usize,
+    #[serde(default)]
+    reset_on_invalid_move: bool,
 
     // display
     #[serde(default = "falsy")]
@@ -88,6 +90,7 @@ impl Default for HanoiApp {
             state: Default::default(),
             moves: 0,
             undo_index: 0,
+            reset_on_invalid_move: false,
 
             blindfold: false,
             show_poles: true,

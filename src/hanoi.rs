@@ -61,12 +61,9 @@ impl HanoiGame {
         }
     }
     pub fn required_moves(&self) -> RequiredMoves {
-        let result = frame_stewart(self.disks_count, self.poles_count);
-
-        match result {
-            Some(count) => RequiredMoves::Count(count),
-            None => RequiredMoves::Impossible,
-        }
+        if self.end_pole == Some(self.start_pole) { return RequiredMoves::Count(2) }
+        if self.illegal_moves { return RequiredMoves::Count(2 * self.disks_count as u128 - 1) }
+        frame_stewart(self.disks_count, self.poles_count).into()
     }
     pub fn finished(&self) -> bool {
         let end = ArrayVec::from_iter((1..=self.disks_count).rev());
@@ -113,6 +110,15 @@ impl Default for HanoiGame {
 pub enum RequiredMoves {
     Impossible,
     Count(u128),
+}
+
+impl<T: Into<u128>> From<Option<T>> for RequiredMoves {
+    fn from(value: Option<T>) -> Self {
+        match value {
+            Some(count) => RequiredMoves::Count(count.into()),
+            None => RequiredMoves::Impossible,
+        }
+    }
 }
 
 impl Display for RequiredMoves {
