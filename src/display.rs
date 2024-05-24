@@ -19,6 +19,7 @@ const POLE_COLOR: Color32 = Color32::WHITE;
 const TEXT_COLOR: Color32 = Color32::WHITE;
 const TEXT_OUTLINE_COLOR: Color32 = Color32::BLACK;
 const SHARE_BUTTON_DURATION: Duration = Duration::from_millis(1000);
+const DEFAULT_QUICK_KEY: (Key, usize, usize) = (Key::A, 1, 2);
 
 static DEFAULT_HANOI_APP: Lazy<HanoiApp> = Lazy::new(|| {
     let mut hanoi_app = HanoiApp::default();
@@ -273,6 +274,8 @@ impl HanoiApp {
 
                 ui.label("Quick keys");
                 
+                self.quick_keys.retain(|(key, _, _)| !matches!(key, Key::Backspace | Key::Delete));
+
                 Dnd::new(ui, "dnd_quick_keys").show_vec(&mut self.quick_keys, |ui, (key, from, to), handle, _state| {
                     ui.horizontal(|ui| {
                         handle.ui(ui, |ui| {
@@ -280,15 +283,15 @@ impl HanoiApp {
                             integer_input(ui, from, self.extra_mode);
                             integer_input(ui, to, self.extra_mode);
                         });
-                        if ui.button("-").clicked() {
-                            // self.quick_keys.remove(state.index);
-                        }
                     });
                 });
 
-                if ui.button("+").clicked() {
-                    self.quick_keys.push((Key::A, 1, 1));
-                }
+                ui.horizontal(|ui| {
+                    if ui.button("+").clicked() && !self.quick_keys.contains(&DEFAULT_QUICK_KEY) {
+                        self.quick_keys.push(DEFAULT_QUICK_KEY);
+                    }
+                    ui.label("Input Del or Backspace in the key input to remove it");
+                });
             });
 
             ui.separator();
@@ -502,6 +505,7 @@ impl HanoiApp {
     
             if ui.button(button_text).clicked() {
                 let poles_line;
+                let qk_line;
     
                 let share_text = formatdoc!(
                     "
@@ -527,6 +531,14 @@ impl HanoiApp {
                         (self.moves <= required_moves).then_some("💯 Optimal solution"),
                         self.blindfold.then_some("😎 Blindfolded"),
                         self.hanoi.illegal_moves.then_some("👮 Illegal moves"),
+                        {
+                            if self.quick_keys.len() > 6 {
+                                qk_line = format!("⌨️ {} quick keys", self.quick_keys.len());
+                                Some(&qk_line)
+                            } else {
+                                None
+                            }
+                        },
                         // Some("🤣 0 bitches"),
                     ]
                         .into_iter()
