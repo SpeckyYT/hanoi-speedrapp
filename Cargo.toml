@@ -23,4 +23,5 @@ pretty-duration = "0.1.1"
 puffin = "0.19.0"
 puffin_http = "0.16.0"
 serde = { version = "1.0.200", features = ["derive"] }
+serde_with = "3.9.0"
 strum = { version = "0.26.2", features = ["derive"] }

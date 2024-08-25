@@ -101,9 +101,6 @@ impl HanoiApp {
                     }
                 }
             }
-            if let GameState::Finished(_) = self.state {
-                self.player = PlayerKind::Human;
-            }
         }
     }
 }

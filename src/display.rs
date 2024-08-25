@@ -19,7 +19,7 @@ const POLE_COLOR: Color32 = Color32::WHITE;
 const TEXT_COLOR: Color32 = Color32::WHITE;
 const TEXT_OUTLINE_COLOR: Color32 = Color32::BLACK;
 const SHARE_BUTTON_DURATION: Duration = Duration::from_millis(1000);
-const DEFAULT_QUICK_KEY: (Key, usize, usize) = (Key::A, 1, 2);
+const DEFAULT_QUICK_KEY: (Key, usize, usize) = (Key::Space, 1, 2);
 
 static DEFAULT_HANOI_APP: Lazy<HanoiApp> = Lazy::new(|| {
     let mut hanoi_app = HanoiApp::default();

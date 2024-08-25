@@ -6,6 +6,7 @@ use highscores::{Header, Highscores};
 use play::PlayerKind;
 use serde::{Deserialize, Serialize};
 use hanoi::HanoiGame;
+use serde_with::{serde_as, DefaultOnError};
 use util::*;
 
 mod hanoi;
@@ -31,31 +32,50 @@ enum GameState {
     Reset,
 }
 
+// struct QuickKey {
+//     key: Key,
+//     from: usize,
+//     to: usize,
+//     id: usize,
+// }
+
+#[serde_as]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 struct HanoiApp {
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     hanoi: HanoiGame,
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     player: PlayerKind,
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     state: GameState,
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     moves: u128,
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     undo_index: usize,
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     reset_on_invalid_move: bool,
 
     // display
     #[serde(default = "falsy")]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     blindfold: bool,
     #[serde(default = "truthy")]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     show_poles: bool,
     #[serde(default = "falsy")]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     disk_number: bool,
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     color_theme: ColorTheme,
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     poles_position: PolesPosition,
 
     // input
@@ -68,8 +88,10 @@ struct HanoiApp {
 
     // windows
     #[serde(default = "falsy")]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     settings_window: bool,
     #[serde(default = "falsy")]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     replays_window: bool,
 
     // other
@@ -77,8 +99,10 @@ struct HanoiApp {
     extra_mode: bool,
 
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     highscores: Highscores,
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     replays_filter: Header,
 }
 
