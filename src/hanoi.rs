@@ -87,10 +87,10 @@ fn frame_stewart(disks: usize, poles: usize) -> Option<u128> {
         (0, _) => Some(0),
         (1, p) if p > 1 => Some(1),
         (d, 3) => Some(2_u128.pow(d as u32) - 1),
-        (_, p) if p > 3 => {
+        (d, p) if p > 3 => {
             let mut min = None;
-            for i in 0..disks {
-                if let (Some(first), Some(second)) = (frame_stewart(i, poles), frame_stewart(disks - i, poles - 1)) {
+            for i in 0..d {
+                if let (Some(first), Some(second)) = (frame_stewart(i, p), frame_stewart(d - i, p - 1)) {
                     let moves = 2 * first + second;
                     min = Some(min.map_or(moves, |current| moves.min(current)));
                 }

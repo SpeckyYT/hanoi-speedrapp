@@ -576,7 +576,8 @@ fn integer_input<T: Numeric>(ui: &mut Ui, input: &mut T, extra_mode: bool) -> Re
     let resp = ui.add(
         DragValue::new(input)
             .speed(0.0)
-            .clamp_range(0..=(if extra_mode { MAX_DISKS } else { MAX_DISKS_NORMAL }))
+            .range(0..=(if extra_mode { MAX_DISKS } else { MAX_DISKS_NORMAL }))
+            .clamp_to_range(true)
     );
     resp
 }
