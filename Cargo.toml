@@ -2,7 +2,7 @@
 name = "hanoi-speedrapp"
 description = "Tower of Hanoi desktop app for speedrunning"
 repository = "https://github.com/SpeckyYT/hanoi-speedrapp"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "AGPL-3.0-or-later"
 
@@ -11,12 +11,12 @@ license = "AGPL-3.0-or-later"
 [dependencies]
 arboard = { version = "3.4.0", default-features = false }
 arrayvec = { version = "0.7.4", features = ["serde"] }
-cached = "0.51.3"
+cached = "0.53.1"
 chrono = { version = "0.4.38", features = ["serde"] }
-eframe = { version = "0.27.2", features = ["persistence", "puffin", "wgpu"] }
-egui_dnd = "0.8.0"
-egui_extras = "0.27.2"
-egui_plot = "0.27.2"
+eframe = { version = "0.28.1", features = ["persistence", "puffin", "wgpu"] }
+egui_dnd = "0.9.1"
+egui_extras = "0.28.1"
+egui_plot = "0.28.1"
 indoc = "2.0.5"
 once_cell = "1.19.0"
 pretty-duration = "0.1.1"

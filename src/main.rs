@@ -150,17 +150,16 @@ impl HanoiApp {
         eframe::run_native(
             APP_NAME,
             options,
-            Box::new(Self::load),
+            Box::new(|cc| Ok(
+                Box::new(if let Some(storage) = cc.storage {
+                    let mut app = eframe::get_value::<HanoiApp>(storage, eframe::APP_KEY).unwrap_or_default();
+                    app.soft_reset();
+                    app
+                } else {
+                    HanoiApp::default()
+                })
+            )),
         )
-    }
-    fn load(cc: &eframe::CreationContext) -> Box<dyn eframe::App> {
-        Box::new(if let Some(storage) = cc.storage {
-            let mut app = eframe::get_value::<HanoiApp>(storage, eframe::APP_KEY).unwrap_or_default();
-            app.soft_reset();
-            app
-        } else {
-            HanoiApp::default()
-        })
     }
 }
 
