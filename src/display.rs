@@ -493,6 +493,8 @@ impl HanoiApp {
     fn share_button(&self, ui: &mut Ui) {
         if let GameState::Finished(time) = self.state {
             let required_moves = self.hanoi.required_moves().to_number();
+            let is_optimal = self.moves <= required_moves; 
+
             let time_f64 = time.as_secs_f64();
             
             static LAST_SHARE: Lazy<Arc<Mutex<(u8, Instant)>>> = Lazy::new(|| Arc::new(Mutex::new((0, Instant::now()))));
@@ -504,9 +506,6 @@ impl HanoiApp {
             };
     
             if ui.button(button_text).clicked() {
-                let poles_line;
-                let qk_line;
-    
                 let share_text = formatdoc!(
                     "
                         ⬛⬛🟪⬛⬛
@@ -516,29 +515,21 @@ impl HanoiApp {
                         🥞 {} disks
                         ⏱️ {:.3?} seconds
                         🎲 {}/{} moves
-                        🏎️ {:.2?} optimal moves/second
+                        🏎️ {:.2?}{} moves/second
                         {}
                     ",
                     self.hanoi.disks_count,
                     time_f64,
                     self.moves, required_moves,
-                    required_moves as f64 / time_f64,
+                    required_moves as f64 / time_f64, if is_optimal { "" } else { " optimal" }, // yes this is intended
                     [
-                        {
-                            poles_line = format!("🗼 {} poles", self.hanoi.poles_count);
-                            (self.hanoi.poles_count != 3).then_some(poles_line.as_str())
-                        },
-                        (self.moves <= required_moves).then_some("💯 Optimal solution"),
+                        (!is_optimal).then_some(format!("🚗 {:.2?} moves/second", self.moves as f64 / time_f64).as_str()),
+                        (self.hanoi.poles_count != 3).then_some(format!("🗼 {} poles", self.hanoi.poles_count).as_str()),
+                        is_optimal.then_some("💯 Optimal solution"),
                         self.blindfold.then_some("😎 Blindfolded"),
                         self.hanoi.illegal_moves.then_some("👮 Illegal moves"),
-                        {
-                            if self.quick_keys.len() > 6 {
-                                qk_line = format!("⌨️ {} quick keys", self.quick_keys.len());
-                                Some(&qk_line)
-                            } else {
-                                None
-                            }
-                        },
+                        (self.quick_keys.len() != self.hanoi.poles_count * (self.hanoi.poles_count - 1))
+                            .then_some(format!("⌨️ {} quick keys", self.quick_keys.len()).as_str()),
                         // Some("🤣 0 bitches"),
                     ]
                         .into_iter()
