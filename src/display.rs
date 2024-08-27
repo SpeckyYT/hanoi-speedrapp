@@ -35,6 +35,16 @@ pub enum ColorTheme {
     Sites,
 }
 
+impl ColorTheme {
+    fn to_emojis(&self) -> (&str, &str, &str) {
+        match self {
+            ColorTheme::Purple => ("🟪", "⬜", "🟪"),
+            ColorTheme::Rainbow => ("🟩", "🟦", "🟥"),
+            ColorTheme::Sites => ("🟩", "🟦", "🟧"),
+        }
+    }
+}
+
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
 pub enum PolesPosition {
     #[default]
@@ -506,20 +516,24 @@ impl HanoiApp {
             };
     
             if ui.button(button_text).clicked() {
+                let time_string = format!("{:.3?}", time_f64);
+
+                let (b1, b2, b3) = self.color_theme.to_emojis();
+
                 let share_text = formatdoc!(
                     "
-                        ⬛⬛🟪⬛⬛
-                        ⬛⬜⬜⬜⬛
-                        🟪🟪🟪🟪🟪
+                        ⬛⬛{b1}⬛⬛
+                        ⬛{b2}{b2}{b2}⬛
+                        {b3}{b3}{b3}{b3}{b3}
                         {APP_NAME} Result:
                         🥞 {} disks
-                        ⏱️ {:.3?} seconds
+                        ⏱️ {} seconds
                         🎲 {}/{} moves
                         🏎️ {:.2?}{} moves/second
                         {}
                     ",
                     self.hanoi.disks_count,
-                    time_f64,
+                    time_string,
                     self.moves, required_moves,
                     required_moves as f64 / time_f64, if is_optimal { "" } else { " optimal" }, // yes this is intended
                     [
@@ -530,7 +544,7 @@ impl HanoiApp {
                         self.hanoi.illegal_moves.then_some("👮 Illegal moves"),
                         (self.quick_keys.len() != self.hanoi.poles_count * (self.hanoi.poles_count - 1))
                             .then_some(format!("⌨️ {} quick keys", self.quick_keys.len()).as_str()),
-                        // Some("🤣 0 bitches"),
+                        time_string.contains("69").then_some("🤣 0 bitches"),
                     ]
                         .into_iter()
                         .flatten()
