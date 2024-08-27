@@ -1,10 +1,12 @@
 use std::{fmt::Debug, sync::Arc, time::{Duration, Instant}};
 
+use colorgrad::Gradient;
 use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Key, Layout, Response, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric, epaint::Hsva};
 use egui_dnd::Dnd;
 use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
 use indoc::formatdoc;
+use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
 use pretty_duration::pretty_duration;
 use serde::{Deserialize, Serialize};
@@ -27,20 +29,86 @@ static DEFAULT_HANOI_APP: Lazy<HanoiApp> = Lazy::new(|| {
     hanoi_app
 });
 
+const THEME_PURPLE_COLORS: &[Color32] = &[
+    Color32::from_rgb(212, 156, 234),
+    Color32::from_rgb(134, 88, 154),
+];
+
+const THEME_SITES_COLORS: &[Color32] = &[
+    Color32::from_rgb(170, 229, 164),   // rule
+    Color32::from_rgb(1, 46, 87),       // e
+    Color32::from_rgb(30, 30, 44),      // dan
+    Color32::from_rgb(247, 152, 23),    // hub
+];
+
+const THEME_BAD_APPLE_COLORS: &[Color32] = &[
+    Color32::from_rgb(255, 255, 255),
+    Color32::from_rgb(0, 0, 0),
+];
+
+macro_rules! gradients_generator {
+    {$(const $n:ident/$g:ident: $t:ident = &[ $($c:expr,)* ];)*} => {
+        $(
+            const $n: &[Color32] = &[ $($c,)* ];
+            lazy_static!(
+                static ref $g: colorgrad::$t = {
+                    let colors = $n.iter().map(|c| colorgrad::Color::from_rgba8(c.r(), c.g(), c.b(), c.a())).collect::<Vec<colorgrad::Color>>();
+                    let gradient = colorgrad::GradientBuilder::new()
+                        .colors(&colors)
+                        .build::<colorgrad::$t>()
+                        .unwrap();
+                    gradient
+                };
+            );
+        )*
+    };
+}
+
+gradients_generator!{
+    const THEME_SPECKY_COLORS/THEME_SPECKY_GRADIENT: CatmullRomGradient = &[
+        Color32::from_rgb(255, 43, 254),
+        Color32::from_rgb(254, 254, 254),
+        Color32::from_rgb(114, 253, 255),
+    ];
+}
+
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
 pub enum ColorTheme {
     Rainbow,
     #[default]
     Purple,
     Sites,
+    BadApple,
+    Specky,
 }
 
 impl ColorTheme {
-    fn to_emojis(&self) -> (&str, &str, &str) {
+    pub fn to_color(&self, disk_number: usize, disks_count: usize) -> Color32 {
+        let modulo = |theme: &[Color32]| theme[(disk_number - 1) % theme.len()];
+        fn gradient(gradient: impl Gradient, disk_number: usize, disks_count: usize) -> Color32 {
+            let color = &gradient.colors(disks_count)[disk_number - 1];
+            let [ r, g, b, _ ] = color.to_rgba8();
+            Color32::from_rgb(r, g, b)
+        }
         match self {
-            ColorTheme::Purple => ("🟪", "⬜", "🟪"),
-            ColorTheme::Rainbow => ("🟩", "🟦", "🟥"),
-            ColorTheme::Sites => ("🟩", "🟦", "🟧"),
+            ColorTheme::Rainbow => {
+                let hsv = Hsva::new(disk_number as f32 / disks_count as f32, 1.0, 1.0, 1.0);
+                let [ r, g, b ] = hsv.to_srgb();
+                Color32::from_rgb(r, g, b)
+            },
+            ColorTheme::Purple => modulo(THEME_PURPLE_COLORS),
+            ColorTheme::Sites => modulo(THEME_SITES_COLORS),
+            ColorTheme::BadApple => modulo(THEME_BAD_APPLE_COLORS),
+            ColorTheme::Specky => gradient(THEME_SPECKY_GRADIENT.clone(), disk_number, disks_count),
+        }
+    }
+    pub fn to_emojis(&self) -> (char, char, char) {
+        match self {
+            ColorTheme::Purple => ('🟪', '⬜', '🟪'),
+            ColorTheme::Rainbow => ('🟩', '🟦', '🟥'),
+            ColorTheme::Sites => ('🟩', '🟦', '🟧'),
+            ColorTheme::BadApple => ('⬜', '🟫', '⬜'), // brown is so ugly :/
+            ColorTheme::Specky => ('🟪', '⬜', '🟦'),
         }
     }
 }
@@ -159,29 +227,7 @@ impl HanoiApp {
                     let width = DISK_WIDTH_MIN + width_step * disk_number as f32;
                     let size = Vec2::new(width, disk_height);
                     let (response, painter) = ui.allocate_painter(size, Sense::hover());
-                    let color = match self.color_theme {
-                        ColorTheme::Rainbow => {
-                            let hsv = Hsva::new(disk_number as f32 / self.hanoi.disks_count as f32, 1.0, 1.0, 1.0);
-                            let [ r, g, b ] = hsv.to_srgb();
-                            Color32::from_rgb(r, g, b)
-                        },
-                        ColorTheme::Purple => {
-                            if disk_number % 2 == 0 {
-                                Color32::from_rgb(212, 156, 234)
-                            } else {
-                                Color32::from_rgb(134, 88, 154)
-                            }
-                        },
-                        ColorTheme::Sites => {
-                            const COLORS: &[Color32] = &[
-                                Color32::from_rgb(170, 229, 164),   // rule
-                                Color32::from_rgb(1, 46, 87),       // e
-                                Color32::from_rgb(30, 30, 44),      // dan
-                                Color32::from_rgb(247, 152, 23),    // hub
-                            ];
-                            COLORS[(disk_number - 1) % COLORS.len()]
-                        },
-                    };
+                    let color = self.color_theme.to_color(disk_number, self.hanoi.disks_count);
                     painter.rect_filled(response.rect, disk_height / 2.5, color);
                     if self.disk_number {
                         let center_pos = response.rect.center();
@@ -519,11 +565,12 @@ impl HanoiApp {
                 let time_string = format!("{:.3?}", time_f64);
 
                 let (b1, b2, b3) = self.color_theme.to_emojis();
+                let b0 = '⬛';
 
                 let share_text = formatdoc!(
                     "
-                        ⬛⬛{b1}⬛⬛
-                        ⬛{b2}{b2}{b2}⬛
+                        {b0}{b0}{b1}{b0}{b0}
+                        {b0}{b2}{b2}{b2}{b0}
                         {b3}{b3}{b3}{b3}{b3}
                         {APP_NAME} Result:
                         🥞 {} disks
