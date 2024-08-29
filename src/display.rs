@@ -563,15 +563,11 @@ impl HanoiApp {
     
             if ui.button(button_text).clicked() {
                 let time_string = format!("{:.3?}", time_f64);
-
-                let (b1, b2, b3) = self.color_theme.to_emojis();
-                let b0 = '⬛';
+                let tower_share = draw_share_tower(self.color_theme, self.poles_position);
 
                 let share_text = formatdoc!(
                     "
-                        {b0}{b0}{b1}{b0}{b0}
-                        {b0}{b2}{b2}{b2}{b0}
-                        {b3}{b3}{b3}{b3}{b3}
+                        {tower_share}
                         {APP_NAME} Result:
                         🥞 {} disks
                         ⏱️ {} seconds
@@ -609,6 +605,20 @@ impl HanoiApp {
             }
         }
     }    
+}
+
+fn draw_share_tower(color_theme: ColorTheme, poles_position: PolesPosition) -> String {
+    let b0 = '⬛';
+    let (b1, b2, b3) = color_theme.to_emojis();
+
+    let l1 = format!("{b0}{b0}{b1}{b0}{b0}");
+    let l2 = format!("{b0}{b2}{b2}{b2}{b0}");
+    let l3 = format!("{b3}{b3}{b3}{b3}{b3}");
+
+    match poles_position {
+        PolesPosition::Bottom => [l1,l2,l3].join("\n"),
+        PolesPosition::Top => [l3,l2,l1].join("\n"),
+    }
 }
 
 fn key_input(ui: &mut Ui, key: &mut Key) -> Response {
