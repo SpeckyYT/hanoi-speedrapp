@@ -1,8 +1,11 @@
-pub const MAX_DISKS: usize = 64;
-pub const MAX_POLES: usize = 16;
-
+pub const MIN_DISKS: usize = 1;
 pub const MAX_DISKS_NORMAL: usize = 30;
+pub const MAX_DISKS: usize = 64;
+
+pub const MIN_POLES: usize = 1;
+pub const MIN_POLES_NORMAL: usize = 3;
 pub const MAX_POLES_NORMAL: usize = 9;
+pub const MAX_POLES: usize = 16;
 
 use std::fmt::Display;
 

@@ -24,12 +24,26 @@ fn main() -> Result<(), eframe::Error> {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+enum GameMode {
+    #[default]
+    FreePlay,
+    Marathon,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 enum GameState {
     #[serde(skip)]
     Playing(Instant),
     Finished(Duration),
     #[default]
     Reset,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+struct Marathon {
+    from: usize,
+    to: usize,
+    poles: usize,
 }
 
 // struct QuickKey {
@@ -48,6 +62,12 @@ struct HanoiApp {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnError")]
     player: PlayerKind,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
+    mode: GameMode,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
+    marathon: Marathon,
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnError")]
     state: GameState,
@@ -93,6 +113,9 @@ struct HanoiApp {
     #[serde(default = "falsy")]
     #[serde_as(deserialize_as = "DefaultOnError")]
     replays_window: bool,
+    #[serde(default = "falsy")]
+    #[serde_as(deserialize_as = "DefaultOnError")]
+    marathon_window: bool,
 
     // other
     #[serde(skip, default = "falsy")]
@@ -111,6 +134,8 @@ impl Default for HanoiApp {
         Self {
             hanoi: Default::default(),
             player: Default::default(),
+            mode: Default::default(),
+            marathon: Marathon { from: 1, to: 1, poles: 3 },
             state: Default::default(),
             moves: 0,
             undo_index: 0,
@@ -128,6 +153,7 @@ impl Default for HanoiApp {
 
             settings_window: false,
             replays_window: false,
+            marathon_window: false,
 
             extra_mode: false,
 

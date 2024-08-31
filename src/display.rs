@@ -12,7 +12,7 @@ use pretty_duration::pretty_duration;
 use serde::{Deserialize, Serialize};
 use strum::{EnumIter, IntoEnumIterator};
 
-use crate::{hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, play::PlayerKind, GameState, HanoiApp, APP_NAME};
+use crate::{hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL}, play::PlayerKind, DisksAndPoles, GameMode, GameState, HanoiApp, Marathon, APP_NAME};
 
 const DISK_HEIGHT: f32 = 30.0;
 const DISK_WIDTH_MIN: f32 = 20.0;
@@ -168,6 +168,10 @@ impl HanoiApp {
                 if ui.button("Replays").clicked() {
                     self.replays_window = !self.replays_window;
                 }
+
+                if ui.button("Marathon").clicked() {
+                    self.marathon_window = !self.marathon_window;
+                }
             });
         });
     }
@@ -187,6 +191,7 @@ impl HanoiApp {
     pub fn draw_windows(&mut self, ctx: &egui::Context) {
         self.draw_settings_window(ctx);
         self.draw_replays_window(ctx);
+        self.draw_marathon_window(ctx);
 
         if let GameState::Finished(end) = self.state {
             self.draw_completed_window(ctx, end);
@@ -278,15 +283,14 @@ impl HanoiApp {
         .open(&mut settings_window)
         .auto_sized()
         .show(ctx, |ui| {
-            let max_disks = if self.extra_mode { MAX_DISKS } else { MAX_DISKS_NORMAL };
-            let max_poles = if self.extra_mode { MAX_POLES } else { MAX_POLES_NORMAL };
-    
+            let DisksAndPoles { min_poles, min_disks, max_poles, max_disks } = self.disks_and_poles();
+
             ui.add_enabled_ui(!matches!(self.state, GameState::Playing(_)), |ui| {
                 check_changed!(
                     self.soft_reset();
-                    ui.add(Slider::new(&mut self.hanoi.disks_count, 1..=max_disks).text("Disks"));
+                    ui.add(Slider::new(&mut self.hanoi.disks_count, min_disks..=max_disks).text("Disks"));
                     {
-                        let resp = ui.add(Slider::new(&mut self.hanoi.poles_count, 2..=max_poles).text("Poles"));
+                        let resp = ui.add(Slider::new(&mut self.hanoi.poles_count, min_poles..=max_poles).text("Poles"));
                         if resp.changed {
                             self.hanoi.start_pole = self.hanoi.start_pole.min(self.hanoi.poles_count);
                         }
@@ -403,11 +407,10 @@ impl HanoiApp {
         Window::new("Replays")
         .open(&mut replays_window)
         .show(ctx, |ui| {
-            let max_disks = if self.extra_mode { MAX_DISKS } else { MAX_DISKS_NORMAL };
-            let max_poles = if self.extra_mode { MAX_POLES } else { MAX_POLES_NORMAL };
-            ui.add(Slider::new(&mut self.replays_filter.disks, 1..=max_disks).text("Disks"));
+            let DisksAndPoles { min_disks, max_disks, min_poles, max_poles } = self.disks_and_poles();
+            ui.add(Slider::new(&mut self.replays_filter.disks, min_disks..=max_disks).text("Disks"));
             {
-                let resp = ui.add(Slider::new(&mut self.replays_filter.poles, 2..=max_poles).text("Poles"));
+                let resp = ui.add(Slider::new(&mut self.replays_filter.poles, min_poles..=max_poles).text("Poles"));
                 if resp.changed {
                     self.replays_filter.start_pole = self.replays_filter.start_pole.min(self.replays_filter.poles);
                 }
@@ -438,6 +441,34 @@ impl HanoiApp {
 
         self.replays_window = self.replays_window && replays_window;
     } 
+
+    pub fn draw_marathon_window(&mut self, ctx: &egui::Context) {
+        let mut marathon_window = self.marathon_window;
+        let mut inner_marathon_windows = true;
+
+        Window::new("Marathon")
+        .open(&mut marathon_window)
+        .show(ctx, |ui| {
+            let mut is_marathon = matches!(self.mode, GameMode::Marathon);
+            ui.checkbox(&mut is_marathon, "Enable marathon");
+            self.mode = if is_marathon { GameMode::Marathon } else { GameMode::FreePlay };
+
+            ui.add_enabled_ui(is_marathon, |ui| {
+                let DisksAndPoles { min_disks, max_disks, min_poles, max_poles } = self.disks_and_poles();
+
+                ui.add(Slider::new(&mut self.marathon.from, min_disks..=max_disks).text("From disks"));
+                ui.add(Slider::new(&mut self.marathon.to, min_disks..=max_disks).text("To disks"));
+
+                ui.add(Slider::new(&mut self.marathon.poles, min_poles..=max_poles).text("Poles"));
+    
+                if ui.button("Start marathon").clicked() {
+                    inner_marathon_windows = false;
+                }
+            });
+        });
+
+        self.marathon_window = inner_marathon_windows && marathon_window;
+    }
 
     pub fn draw_highscores_graph(&mut self, ui: &mut Ui) {
         egui_plot::Plot::new("highscores_plot")

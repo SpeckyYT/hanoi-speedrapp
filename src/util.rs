@@ -1,6 +1,6 @@
 use eframe::egui::{self, Key, Modifiers};
 
-use crate::{play::PlayerKind, GameState, HanoiApp};
+use crate::{hanoi::{MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL, MIN_DISKS, MIN_POLES, MIN_POLES_NORMAL}, play::PlayerKind, GameState, HanoiApp};
 
 impl HanoiApp {
     pub fn soft_reset(&mut self) {
@@ -32,6 +32,9 @@ impl HanoiApp {
             }
         })
     }
+    pub const fn disks_and_poles(&self) -> DisksAndPoles {
+        disks_and_poles(self.extra_mode)
+    }
 }
 
 pub const fn truthy() -> bool { true }
@@ -50,4 +53,22 @@ pub fn quick_keys() -> Vec<(Key, usize, usize)> {
         (J, 3, 1),
         (K, 3, 2),
     ]
+}
+
+pub struct DisksAndPoles {
+    pub min_disks: usize,
+    pub max_disks: usize,
+    pub min_poles: usize,
+    pub max_poles: usize,
+}
+
+#[inline]
+pub const fn disks_and_poles(extra_mode: bool) -> DisksAndPoles {
+    DisksAndPoles {
+        min_disks: MIN_DISKS,
+        max_disks: if extra_mode { MAX_DISKS } else { MAX_DISKS_NORMAL },
+
+        min_poles: if extra_mode { MIN_POLES } else { MIN_POLES_NORMAL },
+        max_poles: if extra_mode { MAX_POLES } else { MAX_POLES_NORMAL },
+    }
 }
