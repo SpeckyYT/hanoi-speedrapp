@@ -353,7 +353,7 @@ impl HanoiApp {
             ui.separator();
 
             ui.add_enabled_ui(!matches!(self.state, GameState::Playing(_)) && !self.equal_settings(&DEFAULT_HANOI_APP), |ui| {
-                if ui.button("Default Settings").clicked() {
+                if ui.button("Default Settings").double_clicked() {
                     let highscores = self.highscores.clone();
                     *self = (*DEFAULT_HANOI_APP).clone();
                     self.highscores = highscores;
