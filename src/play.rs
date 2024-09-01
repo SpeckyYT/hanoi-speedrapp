@@ -33,7 +33,8 @@ impl HanoiApp {
 
     pub fn player_play(&mut self, ctx: &egui::Context) {
         ctx.input(|i| {
-            for (key, from, to) in self.quick_keys.clone() { // todo: find a way to remove the clone
+            for qki in 0..self.quick_keys.len() {
+                let (key, from, to) = self.quick_keys[qki];
                 if i.key_pressed(key) {
                     self.full_move(from - 1, to - 1);
                     self.undo_index = self.hanoi.moves_history.len();
