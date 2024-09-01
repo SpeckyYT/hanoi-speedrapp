@@ -230,15 +230,27 @@ impl HanoiApp {
                         let center_pos = response.rect.center();
                         let align = Align2::CENTER_CENTER;
                         let disk_number = disk_number.to_string();
-                        let font = FontId::monospace(disk_height / 1.5);
+                        let number_size = disk_height / 1.5;
 
                         for x in -1..=1 {
                             for y in -1..=1 {
                                 if x == 0 && y == 0 { continue }
-                                painter.text(center_pos + vec2(x as f32, y as f32), align, &disk_number, font.clone(), TEXT_OUTLINE_COLOR);
+                                painter.text(
+                                    center_pos + vec2(x as f32, y as f32),
+                                    align,
+                                    &disk_number,
+                                    FontId::monospace(number_size),
+                                    TEXT_OUTLINE_COLOR,
+                                );
                             }
                         }
-                        painter.text(center_pos, align, disk_number, font, TEXT_COLOR);
+                        painter.text(
+                            center_pos,
+                            align,
+                            disk_number,
+                            FontId::monospace(number_size),
+                            TEXT_COLOR,
+                        );
                     }
                 });
 
