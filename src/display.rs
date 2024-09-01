@@ -6,7 +6,6 @@ use egui_dnd::Dnd;
 use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
 use indoc::formatdoc;
-use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
 use pretty_duration::pretty_duration;
 use serde::{Deserialize, Serialize};
@@ -50,16 +49,14 @@ macro_rules! gradients_generator {
     {$(const $n:ident/$g:ident: $t:ident = &[ $($c:expr,)* ];)*} => {
         $(
             const $n: &[Color32] = &[ $($c,)* ];
-            lazy_static!(
-                static ref $g: colorgrad::$t = {
-                    let colors = $n.iter().map(|c| colorgrad::Color::from_rgba8(c.r(), c.g(), c.b(), c.a())).collect::<Vec<colorgrad::Color>>();
-                    let gradient = colorgrad::GradientBuilder::new()
-                        .colors(&colors)
-                        .build::<colorgrad::$t>()
-                        .unwrap();
-                    gradient
-                };
-            );
+            static $g: Lazy<colorgrad::$t> = Lazy::new(|| {
+                let colors = $n.iter().map(|c| colorgrad::Color::from_rgba8(c.r(), c.g(), c.b(), c.a())).collect::<Vec<colorgrad::Color>>();
+                let gradient = colorgrad::GradientBuilder::new()
+                    .colors(&colors)
+                    .build::<colorgrad::$t>()
+                    .unwrap();
+                gradient
+            });
         )*
     };
 }
@@ -85,7 +82,7 @@ pub enum ColorTheme {
 impl ColorTheme {
     pub fn to_color(&self, disk_number: usize, disks_count: usize) -> Color32 {
         let modulo = |theme: &[Color32]| theme[(disk_number - 1) % theme.len()];
-        fn gradient(gradient: impl Gradient, disk_number: usize, disks_count: usize) -> Color32 {
+        fn gradient(gradient: &impl Gradient, disk_number: usize, disks_count: usize) -> Color32 {
             let color = &gradient.colors(disks_count)[disk_number - 1];
             let [ r, g, b, _ ] = color.to_rgba8();
             Color32::from_rgb(r, g, b)
@@ -99,7 +96,7 @@ impl ColorTheme {
             ColorTheme::Purple => modulo(THEME_PURPLE_COLORS),
             ColorTheme::Sites => modulo(THEME_SITES_COLORS),
             ColorTheme::BadApple => modulo(THEME_BAD_APPLE_COLORS),
-            ColorTheme::Specky => gradient(THEME_SPECKY_GRADIENT.clone(), disk_number, disks_count),
+            ColorTheme::Specky => gradient(&*THEME_SPECKY_GRADIENT, disk_number, disks_count),
         }
     }
     pub fn to_emojis(&self) -> (char, char, char) {
