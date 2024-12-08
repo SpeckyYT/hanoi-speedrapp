@@ -1,5 +1,7 @@
 use std::time::{Duration, Instant};
 
+use clap::Parser;
+use cli::Cli;
 use display::{themes::ColorTheme, PolesPosition};
 use eframe::{egui::{self, Key}, App, Frame, HardwareAcceleration, NativeOptions};
 use highscores::{Header, Highscores};
@@ -11,18 +13,20 @@ use serde_with::{serde_as, DefaultOnError};
 use util::*;
 
 mod hanoi;
+mod cli;
 mod display;
 mod play;
 mod highscores;
 mod util;
 mod profiling;
 
-const PROFILING: bool = false;
 const APP_NAME: &str = "Towers of Hanoi - Speedrapp Edition";
 
 fn main() -> Result<(), eframe::Error> {
-    enable_profiling();
-    HanoiApp::run()
+    let cli = Cli::parse();
+    if cli.profile { enable_profiling() }
+
+    HanoiApp::run(cli)
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -140,10 +144,11 @@ impl Default for HanoiApp {
 }
 
 impl HanoiApp {
-    pub fn run() -> Result<(), eframe::Error> {
+    pub fn run(cli: Cli) -> Result<(), eframe::Error> {
         let options = NativeOptions {
             hardware_acceleration: HardwareAcceleration::Preferred,
-            vsync: false,
+            vsync: cli.vsync,
+
             persist_window: true,
 
             ..Default::default()
