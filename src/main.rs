@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use display::{ColorTheme, PolesPosition};
+use display::{themes::ColorTheme, PolesPosition};
 use eframe::{egui::{self, Key}, App, Frame, HardwareAcceleration, NativeOptions};
 use highscores::{Header, Highscores};
 use play::PlayerKind;

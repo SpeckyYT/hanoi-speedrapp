@@ -1,7 +1,6 @@
 use std::{fmt::Debug, sync::Arc, time::{Duration, Instant}};
 
-use colorgrad::Gradient;
-use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Key, Layout, Response, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric, epaint::Hsva};
+use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Key, Layout, Response, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric};
 use egui_dnd::Dnd;
 use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
@@ -10,8 +9,11 @@ use once_cell::sync::Lazy;
 use pretty_duration::pretty_duration;
 use serde::{Deserialize, Serialize};
 use strum::{EnumIter, IntoEnumIterator};
+use themes::draw_share_tower;
 
 use crate::{hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, play::PlayerKind, GameState, HanoiApp, APP_NAME};
+
+pub mod themes;
 
 const DISK_HEIGHT: f32 = 30.0;
 const DISK_WIDTH_MIN: f32 = 20.0;
@@ -27,88 +29,6 @@ static DEFAULT_HANOI_APP: Lazy<HanoiApp> = Lazy::new(|| {
     hanoi_app.soft_reset();
     hanoi_app
 });
-
-const THEME_PURPLE_COLORS: &[Color32] = &[
-    Color32::from_rgb(212, 156, 234),
-    Color32::from_rgb(134, 88, 154),
-];
-
-const THEME_SITES_COLORS: &[Color32] = &[
-    Color32::from_rgb(170, 229, 164),   // rule
-    Color32::from_rgb(1, 46, 87),       // e
-    Color32::from_rgb(30, 30, 44),      // dan
-    Color32::from_rgb(247, 152, 23),    // hub
-];
-
-const THEME_BAD_APPLE_COLORS: &[Color32] = &[
-    Color32::from_rgb(255, 255, 255),
-    Color32::from_rgb(0, 0, 0),
-];
-
-macro_rules! gradients_generator {
-    {$(const $n:ident/$g:ident: $t:ident = &[ $($c:expr,)* ];)*} => {
-        $(
-            const $n: &[Color32] = &[ $($c,)* ];
-            static $g: Lazy<colorgrad::$t> = Lazy::new(|| {
-                let colors = $n.iter().map(|c| colorgrad::Color::from_rgba8(c.r(), c.g(), c.b(), c.a())).collect::<Vec<colorgrad::Color>>();
-                let gradient = colorgrad::GradientBuilder::new()
-                    .colors(&colors)
-                    .build::<colorgrad::$t>()
-                    .unwrap();
-                gradient
-            });
-        )*
-    };
-}
-
-gradients_generator!{
-    const THEME_SPECKY_COLORS/THEME_SPECKY_GRADIENT: CatmullRomGradient = &[
-        Color32::from_rgb(255, 43, 254),
-        Color32::from_rgb(254, 254, 254),
-        Color32::from_rgb(114, 253, 255),
-    ];
-}
-
-#[derive(Default, Debug, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
-pub enum ColorTheme {
-    Rainbow,
-    #[default]
-    Purple,
-    Sites,
-    BadApple,
-    Specky,
-}
-
-impl ColorTheme {
-    pub fn to_color(&self, disk_number: usize, disks_count: usize) -> Color32 {
-        let modulo = |theme: &[Color32]| theme[(disk_number - 1) % theme.len()];
-        fn gradient(gradient: &impl Gradient, disk_number: usize, disks_count: usize) -> Color32 {
-            let color = &gradient.colors(disks_count)[disk_number - 1];
-            let [ r, g, b, _ ] = color.to_rgba8();
-            Color32::from_rgb(r, g, b)
-        }
-        match self {
-            ColorTheme::Rainbow => {
-                let hsv = Hsva::new(disk_number as f32 / disks_count as f32, 1.0, 1.0, 1.0);
-                let [ r, g, b ] = hsv.to_srgb();
-                Color32::from_rgb(r, g, b)
-            },
-            ColorTheme::Purple => modulo(THEME_PURPLE_COLORS),
-            ColorTheme::Sites => modulo(THEME_SITES_COLORS),
-            ColorTheme::BadApple => modulo(THEME_BAD_APPLE_COLORS),
-            ColorTheme::Specky => gradient(&*THEME_SPECKY_GRADIENT, disk_number, disks_count),
-        }
-    }
-    pub fn to_emojis(&self) -> (char, char, char) {
-        match self {
-            ColorTheme::Purple => ('🟪', '⬜', '🟪'),
-            ColorTheme::Rainbow => ('🟩', '🟦', '🟥'),
-            ColorTheme::Sites => ('🟩', '🟦', '🟧'),
-            ColorTheme::BadApple => ('⬜', '🟫', '⬜'), // brown is so ugly :/
-            ColorTheme::Specky => ('🟪', '⬜', '🟦'),
-        }
-    }
-}
 
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
 pub enum PolesPosition {
@@ -616,20 +536,6 @@ impl HanoiApp {
     }    
 }
 
-fn draw_share_tower(color_theme: ColorTheme, poles_position: PolesPosition) -> String {
-    let b0 = '⬛';
-    let (b1, b2, b3) = color_theme.to_emojis();
-
-    let l1 = format!("{b0}{b0}{b1}{b0}{b0}");
-    let l2 = format!("{b0}{b2}{b2}{b2}{b0}");
-    let l3 = format!("{b3}{b3}{b3}{b3}{b3}");
-
-    match poles_position {
-        PolesPosition::Bottom => [l1,l2,l3].join("\n"),
-        PolesPosition::Top => [l3,l2,l1].join("\n"),
-    }
-}
-
 fn key_input(ui: &mut Ui, key: &mut Key) -> Response {
     let mut from_string = format!("{:?}", key);
     let resp = ui.text_edit_singleline(&mut from_string);
@@ -648,7 +554,7 @@ fn integer_input<T: Numeric>(ui: &mut Ui, input: &mut T, extra_mode: bool) -> Re
         DragValue::new(input)
             .speed(0.0)
             .range(0..=(if extra_mode { MAX_DISKS } else { MAX_DISKS_NORMAL }))
-            .clamp_to_range(true)
+            .clamp_existing_to_range(true)
     );
     resp
 }
