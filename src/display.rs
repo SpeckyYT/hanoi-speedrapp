@@ -106,6 +106,8 @@ impl HanoiApp {
     }
 
     pub fn draw_windows(&mut self, ctx: &egui::Context) {
+        puffin::profile_function!();
+
         self.draw_settings_window(ctx);
         self.draw_replays_window(ctx);
 
@@ -200,6 +202,8 @@ impl HanoiApp {
     }
 
     pub fn draw_state(&mut self, ui: &mut egui::Ui) {
+        puffin::profile_function!();
+
         ui.label(match self.state {
             GameState::Reset => "Not started".to_string(),
             GameState::Playing(start) => format!("{:.3?} seconds", start.elapsed().as_secs_f64()),
@@ -213,6 +217,8 @@ impl HanoiApp {
     }
 
     pub fn draw_settings_window(&mut self, ctx: &egui::Context) {
+        puffin::profile_function!();
+        
         let mut settings_window = self.settings_window;
 
         Window::new("Settings")
@@ -339,6 +345,8 @@ impl HanoiApp {
     }
 
     pub fn draw_replays_window(&mut self, ctx: &egui::Context) {
+        puffin::profile_function!();
+        
         let mut replays_window = self.replays_window;
 
         Window::new("Replays")
@@ -381,6 +389,8 @@ impl HanoiApp {
     } 
 
     pub fn draw_highscores_graph(&mut self, ui: &mut Ui) {
+        puffin::profile_function!();
+
         egui_plot::Plot::new("highscores_plot")
             .height(128.0)
             .show_axes(false)
@@ -399,6 +409,8 @@ impl HanoiApp {
     }
 
     pub fn draw_highscores_table(&mut self, ui: &mut Ui) {
+        puffin::profile_function!();
+        
         match self.highscores.get(&self.replays_filter) {
             Some(games) if !games.is_empty() => {
                 let col_def = Column::remainder().resizable(true);
@@ -445,6 +457,8 @@ impl HanoiApp {
     }
 
     pub fn draw_completed_window(&mut self, ctx: &egui::Context, duration: Duration) {
+        puffin::profile_function!();
+        
         Window::new("🏆 Game complete!")
         .collapsible(false)
         .auto_sized()

@@ -24,9 +24,9 @@ macro_rules! gradients_generator {
 
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
 pub enum ColorTheme {
-    Rainbow,
     #[default]
     Purple,
+    Rainbow,
     Sites,
     BadApple,
     Specky,
