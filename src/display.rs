@@ -51,6 +51,8 @@ macro_rules! check_changed {
 
 impl HanoiApp {
     pub fn draw_top_bar(&mut self, ctx: &egui::Context) {
+        puffin::profile_function!();
+
         TopBottomPanel::top("top panel")
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
@@ -90,6 +92,8 @@ impl HanoiApp {
     }
 
     pub fn draw_central_panel(&mut self, ctx: &egui::Context) {
+        puffin::profile_function!();
+
         CentralPanel::default()
         .show(ctx, |ui| {
             if self.blindfold && matches!((&self.player, &self.state), (PlayerKind::Human, GameState::Playing(_))) {
@@ -117,6 +121,8 @@ impl HanoiApp {
     }
 
     pub fn draw_poles(&self, ui: &mut Ui) {
+        puffin::profile_function!();
+
         ui.columns(self.hanoi.poles_count, |uis| {
             uis.iter_mut().enumerate().for_each(|(i, ui)| {
                 self.draw_pole(ui, i);
@@ -125,6 +131,8 @@ impl HanoiApp {
     }
 
     pub fn draw_pole(&self, ui: &mut Ui, i: usize) {
+        puffin::profile_function!();
+
         ui.with_layout(
             Layout::from_main_dir_and_cross_align(
                 match self.poles_position {
@@ -134,6 +142,7 @@ impl HanoiApp {
                 Align::Center,
             ),
             |ui| {
+                puffin::profile_scope!("pole layout");
                 let max_width = ui.available_width();
                 let width_step = (max_width - DISK_WIDTH_MIN) / self.hanoi.disks_count as f32;
                 let max_height = ui.available_height();
@@ -141,12 +150,15 @@ impl HanoiApp {
                 let disk_height = DISK_HEIGHT.min((max_height - spacing * (self.hanoi.disks_count + 2) as f32) / (self.hanoi.disks_count as f32)).max(0.1);
 
                 self.hanoi.poles[i].iter().for_each(|&disk_number| {
+                    puffin::profile_scope!("draw disk");
                     let width = DISK_WIDTH_MIN + width_step * disk_number as f32;
                     let size = Vec2::new(width, disk_height);
                     let (response, painter) = ui.allocate_painter(size, Sense::hover());
                     let color = self.color_theme.to_color(disk_number, self.hanoi.disks_count);
                     painter.rect_filled(response.rect, disk_height / 2.5, color);
                     if self.disk_number {
+                        puffin::profile_scope!("disk number");
+
                         let center_pos = response.rect.center();
                         let align = Align2::CENTER_CENTER;
                         let disk_number = disk_number.to_string();
@@ -154,7 +166,7 @@ impl HanoiApp {
 
                         for x in -1..=1 {
                             for y in -1..=1 {
-                                if x == 0 && y == 0 { continue }
+                                if x == 0 || y == 0 { continue }
                                 painter.text(
                                     center_pos + vec2(x as f32, y as f32),
                                     align,
