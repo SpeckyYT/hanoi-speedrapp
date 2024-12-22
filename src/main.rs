@@ -1,9 +1,10 @@
 use std::time::{Duration, Instant};
 
+use chrono::Datelike;
 use clap::Parser;
 use cli::Cli;
 use display::{themes::ColorTheme, PolesPosition};
-use eframe::{egui::{self, Key}, App, Frame, HardwareAcceleration, NativeOptions};
+use eframe::{egui::{self, Key}, App, Frame, HardwareAcceleration, NativeOptions, APP_KEY};
 use highscores::{Header, Highscores};
 use play::PlayerKind;
 use profiling::enable_profiling;
@@ -25,6 +26,7 @@ const APP_NAME: &str = "Towers of Hanoi - Speedrapp Edition";
 fn main() -> Result<(), eframe::Error> {
     let cli = Cli::parse();
     if cli.profile { enable_profiling() }
+    if cli.backup { backup_save() }
 
     HanoiApp::run(cli)
 }
@@ -197,6 +199,26 @@ impl App for HanoiApp {
 
         if matches!(self.state, GameState::Playing(_)) {
             ctx.request_repaint();
+        }
+    }
+}
+
+fn backup_save() {
+    if let Some(path) = eframe::storage_dir(APP_NAME) {
+        let main_file = path.join(format!("{APP_KEY}.ron"));
+
+        for i in 0..1000 {
+            let now = chrono::Utc::now();
+            let year = now.year();
+            let month = now.month();
+            let day = now.day();
+            let postfix = if i == 0 { "".to_string() } else { format!(" {}", i) };
+            let output_file = path.join(format!("{APP_KEY} BACKUP {year}_{month}_{day}{postfix}.ron"));
+            if !output_file.exists() {
+                if std::fs::copy(&main_file, &output_file).is_ok() {
+                    break;
+                }
+            }
         }
     }
 }
