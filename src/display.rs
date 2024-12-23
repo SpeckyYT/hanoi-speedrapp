@@ -99,7 +99,8 @@ impl HanoiApp {
             if self.blindfold && matches!((&self.player, &self.state), (PlayerKind::Human, GameState::Playing(_))) {
                 self.draw_blindfold(ui);
             } else {
-                self.draw_poles(ui);
+                let poles = self.draw_poles(ui);
+                self.drag_and_drop_play(poles);
             }
             self.draw_windows(ui.ctx());
         });
@@ -122,17 +123,17 @@ impl HanoiApp {
         });
     }
 
-    pub fn draw_poles(&self, ui: &mut Ui) {
+    pub fn draw_poles(&mut self, ui: &mut Ui) -> Vec<Response> {
         puffin::profile_function!();
 
         ui.columns(self.hanoi.poles_count, |uis| {
-            uis.iter_mut().enumerate().for_each(|(i, ui)| {
-                self.draw_pole(ui, i);
-            });
+            uis.iter_mut().enumerate()
+                .map(|(i, ui)| self.draw_pole(ui, i).interact(Sense::drag()))
+                .collect::<Vec<Response>>()
         })
     }
 
-    pub fn draw_pole(&self, ui: &mut Ui, i: usize) {
+    pub fn draw_pole(&mut self, ui: &mut Ui, i: usize) -> Response {
         puffin::profile_function!();
 
         ui.with_layout(
@@ -152,40 +153,12 @@ impl HanoiApp {
                 let disk_height = DISK_HEIGHT.min((max_height - spacing * (self.hanoi.disks_count + 2) as f32) / (self.hanoi.disks_count as f32)).max(0.1);
 
                 self.hanoi.poles[i].iter().for_each(|&disk_number| {
-                    puffin::profile_scope!("draw disk");
-                    let width = DISK_WIDTH_MIN + width_step * disk_number as f32;
-                    let size = Vec2::new(width, disk_height);
-                    let (response, painter) = ui.allocate_painter(size, Sense::hover());
-                    let color = self.color_theme.to_color(disk_number, self.hanoi.disks_count);
-                    painter.rect_filled(response.rect, disk_height / 2.5, color);
-                    if self.disk_number {
-                        puffin::profile_scope!("disk number");
-
-                        let center_pos = response.rect.center();
-                        let align = Align2::CENTER_CENTER;
-                        let disk_number = disk_number.to_string();
-                        let number_size = disk_height / 1.5;
-
-                        for x in -1..=1 {
-                            for y in -1..=1 {
-                                if x == 0 || y == 0 { continue }
-                                painter.text(
-                                    center_pos + vec2(x as f32, y as f32),
-                                    align,
-                                    &disk_number,
-                                    FontId::monospace(number_size),
-                                    TEXT_OUTLINE_COLOR,
-                                );
-                            }
-                        }
-                        painter.text(
-                            center_pos,
-                            align,
-                            disk_number,
-                            FontId::monospace(number_size),
-                            TEXT_COLOR,
-                        );
-                    }
+                    self.draw_disk(
+                        ui,
+                        disk_number,
+                        width_step,
+                        disk_height,
+                    );
                 });
 
                 if self.show_poles {
@@ -198,7 +171,46 @@ impl HanoiApp {
                     painter.rect_filled(response.rect, 0.0, POLE_COLOR);
                 }
             }
-        );
+        ).response
+    }
+
+    pub fn draw_disk(&self, ui: &mut Ui, disk_number: usize, width_step: f32, disk_height: f32) -> Response {
+        puffin::profile_scope!("draw disk");
+
+        let width = DISK_WIDTH_MIN + width_step * disk_number as f32;
+        let size = Vec2::new(width, disk_height);
+        let (response, painter) = ui.allocate_painter(size, Sense::hover());
+        let color = self.color_theme.to_color(disk_number, self.hanoi.disks_count);
+        painter.rect_filled(response.rect, disk_height / 2.5, color);
+        if self.disk_number {
+            puffin::profile_scope!("disk number");
+
+            let center_pos = response.rect.center();
+            let align = Align2::CENTER_CENTER;
+            let disk_number = disk_number.to_string();
+            let number_size = disk_height / 1.5;
+
+            for x in -1..=1 {
+                for y in -1..=1 {
+                    if x == 0 || y == 0 { continue }
+                    painter.text(
+                        center_pos + vec2(x as f32, y as f32),
+                        align,
+                        &disk_number,
+                        FontId::monospace(number_size),
+                        TEXT_OUTLINE_COLOR,
+                    );
+                }
+            }
+            painter.text(
+                center_pos,
+                align,
+                disk_number,
+                FontId::monospace(number_size),
+                TEXT_COLOR,
+            );
+        }
+        response
     }
 
     pub fn draw_state(&mut self, ui: &mut egui::Ui) {

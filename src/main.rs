@@ -93,6 +93,9 @@ struct HanoiApp {
     undo_key: Key,
     #[serde(default = "quick_keys")]
     quick_keys: Vec<(Key, usize, usize)>,
+    #[serde(skip, default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
+    dragging_pole: Option<usize>,
 
     // windows
     #[serde(default = "falsy")]
@@ -133,6 +136,7 @@ impl Default for HanoiApp {
             reset_key: reset_key(),
             undo_key: undo_key(),
             quick_keys: quick_keys(),
+            dragging_pole: None,
 
             settings_window: false,
             replays_window: false,

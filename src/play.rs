@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use eframe::egui;
+use eframe::egui::{self, Response};
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
@@ -37,7 +37,7 @@ impl HanoiApp {
                 let (key, from, to) = self.quick_keys[qki];
                 if i.key_pressed(key) {
                     self.full_move(from - 1, to - 1);
-                    self.undo_index = self.hanoi.moves_history.len();
+                    self.reset_undo();
                 }
             }
 
@@ -56,11 +56,39 @@ impl HanoiApp {
         }
     }
 
+    pub fn drag_and_drop_play(&mut self, poles: Vec<Response>) {
+        match self.dragging_pole {
+            None => {
+                poles.iter().enumerate().for_each(|(i, pole)| {
+                    if pole.drag_started() {
+                        self.dragging_pole = Some(i);
+                    }
+                });
+            },
+            Some(from) => {
+                if poles[from].drag_stopped() {
+                    poles.iter().enumerate().for_each(|(to, pole)| {
+                        if pole.hovered() {
+                            self.full_move(from, to);
+                            self.reset_undo();
+                        }
+                    });
+                    self.dragging_pole = None;
+                }
+            },
+        }
+    }
+
     pub fn undo_move(&mut self) {
         if let Some((_, from, to)) = self.undo_index.checked_sub(1).and_then(|i| self.hanoi.moves_history.get(i)) {
             self.full_move(*to, *from);
             self.undo_index -= 1;
         }
+    }
+
+    #[inline]
+    pub fn reset_undo(&mut self) {
+        self.undo_index = self.hanoi.moves_history.len();
     }
 
     pub fn bot_play(&mut self) {
