@@ -2,7 +2,7 @@ pub fn enable_profiling() {
     puffin::set_scopes_on(true);
 
     let server_addr = format!("127.0.0.1:{}", puffin_http::DEFAULT_PORT);
-    let server_addr_http = format!("{server_addr}");
+    let server_addr_http = server_addr.to_string();
     
     match puffin_http::Server::new(&server_addr) {
         Ok(server) => {

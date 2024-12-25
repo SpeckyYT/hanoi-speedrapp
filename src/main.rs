@@ -218,10 +218,8 @@ fn backup_save() {
             let day = now.day();
             let postfix = if i == 0 { "".to_string() } else { format!(" {}", i) };
             let output_file = path.join(format!("{APP_KEY} BACKUP {year}_{month}_{day}{postfix}.ron"));
-            if !output_file.exists() {
-                if std::fs::copy(&main_file, &output_file).is_ok() {
-                    break;
-                }
+            if !output_file.exists() && std::fs::copy(&main_file, &output_file).is_ok() {
+                break;
             }
         }
     }

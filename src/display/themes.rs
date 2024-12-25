@@ -35,7 +35,7 @@ pub enum ColorTheme {
 }
 
 impl ColorTheme {
-    pub fn to_color(&self, disk_number: usize, disks_count: usize) -> Color32 {
+    pub fn to_color(self, disk_number: usize, disks_count: usize) -> Color32 {
         let modulo = |theme: &[Color32]| theme[(disk_number - 1) % theme.len()];
         let spread = |theme: &[Color32]| theme[(disk_number - 1) * theme.len() / disks_count];
         fn gradient(gradient: &impl Gradient, disk_number: usize, disks_count: usize) -> Color32 {
@@ -57,7 +57,7 @@ impl ColorTheme {
             ColorTheme::Peter => spread(THEME_PETER_COLORS),
         }
     }
-    pub fn to_emojis(&self) -> (char, char, char) {
+    pub fn to_emojis(self) -> (char, char, char) {
         match self {
             ColorTheme::Purple => ('🟪', '⬜', '🟪'),
             ColorTheme::Rainbow => ('🟩', '🟦', '🟥'),
