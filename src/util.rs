@@ -8,6 +8,7 @@ impl HanoiApp {
         self.state = GameState::Reset;
         self.player = PlayerKind::Human;
         self.moves = 0;
+        self.dragging_pole = None;
     }
 
     pub fn equal_settings(&self, other: &Self) -> bool {

@@ -1,6 +1,6 @@
 use std::{fmt::Debug, sync::Arc, time::{Duration, Instant}};
 
-use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, CentralPanel, Color32, ComboBox, Direction, DragAndDrop, DragValue, Event, FontId, Key, Layout, Response, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric};
+use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, Area, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Id, Key, Layout, Order, Response, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric};
 use egui_dnd::Dnd;
 use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
@@ -108,8 +108,8 @@ impl HanoiApp {
                 self.draw_blindfold(ui);
             } else {
                 let poles = self.draw_poles(ui);
-                self.drag_and_drop_play(poles);
-                // self.draw_dragging_disk(ui);
+                self.drag_and_drop_play(ctx, poles);
+                self.draw_dragging_disk(ui);
             }
             self.draw_windows(ui.ctx());
         });
@@ -156,24 +156,28 @@ impl HanoiApp {
             |ui| {
                 puffin::profile_scope!("pole_layout");
                 let max_width = ui.available_width();
-                let width_step = (max_width - DISK_WIDTH_MIN) / self.hanoi.disks_count as f32;
                 let max_height = ui.available_height();
                 let spacing = ui.style_mut().spacing.item_spacing.y;
                 let disk_height = DISK_HEIGHT.min((max_height - spacing * (self.hanoi.disks_count + 2) as f32) / (self.hanoi.disks_count as f32)).max(0.1);
+                let mut disks_skipped = 0;
 
-                self.hanoi.poles[i].iter().for_each(|&disk_number| {
-                    self.draw_disk(
-                        ui,
-                        disk_number,
-                        width_step,
-                        disk_height,
-                    );
+                self.hanoi.poles[i].iter().enumerate().for_each(|(j, &disk_number)| {
+                    if self.dragging_pole == Some(i) && j == self.hanoi.poles[i].len() - 1 {
+                        disks_skipped += 1;
+                    } else {
+                        self.draw_disk(
+                            ui,
+                            disk_number,
+                            max_width,
+                            disk_height,
+                        );
+                    }
                 });
 
                 if self.show_poles {
                     let single_height = disk_height + spacing;
                     let pole_size = self.hanoi.poles[i].len();
-                    let remaining_size = self.hanoi.disks_count - pole_size + 1;
+                    let remaining_size = self.hanoi.disks_count + disks_skipped - pole_size + 1;
                     let remaining_height = remaining_size as f32 * single_height;
                     let size = vec2(POLE_WIDTH, remaining_height);
                     let (response, painter) = ui.allocate_painter(size, Sense::hover());
@@ -185,11 +189,19 @@ impl HanoiApp {
         ).response
     }
 
-    pub fn draw_disk(&self, ui: &mut Ui, disk_number: usize, width_step: f32, disk_height: f32) -> Response {
+    pub fn calculate_disk_size(&self, disk_number: usize, max_width: f32, disk_height: f32) -> Vec2 {
+        let width_step = (max_width - DISK_WIDTH_MIN) / self.hanoi.disks_count as f32;
+        let width = DISK_WIDTH_MIN + disk_number as f32 * width_step;
+        Vec2::new(
+            width,
+            disk_height,
+        )
+    }
+
+    pub fn draw_disk(&self, ui: &mut Ui, disk_number: usize, max_width: f32, disk_height: f32) -> Response {
         puffin::profile_function!("draw_disk");
 
-        let width = DISK_WIDTH_MIN + width_step * disk_number as f32;
-        let size = Vec2::new(width, disk_height);
+        let size = self.calculate_disk_size(disk_number, max_width, disk_height);
         let (response, painter) = ui.allocate_painter(size, Sense::hover());
         let color = self.color_theme.to_color(disk_number, self.hanoi.disks_count);
         painter.rect_filled(response.rect, disk_height / 2.5, color);
@@ -229,20 +241,19 @@ impl HanoiApp {
             let position = ui.input(|i | i.pointer.interact_pos());
 
             if let (Some(&disk_number), Some(position)) = (self.hanoi.poles[from].last(), position) {
-                let disk_height = DISK_HEIGHT.min(ui.available_height());
-                let width_step = (ui.available_width() - DISK_WIDTH_MIN) / self.hanoi.disks_count as f32;
+                let available_size = ui.ctx().available_rect();
+                let disk_height = DISK_HEIGHT.min(available_size.height());
+                let spacing_x = ui.style_mut().spacing.item_spacing.x;
+                let max_width = available_size.width() / self.hanoi.poles_count as f32 - spacing_x * 2.0;
+                let size = self.calculate_disk_size(disk_number, max_width, disk_height);
 
-                // DragAndDrop::set_payload(ctx, payload);
-                // ui.dnd_drag_source(id, payload, add_contents)
-                // todo: no fugging idea how to make this work
-
-                Window::new("dragging_disk")
-                    .title_bar(false)
-                    .resizable(false)
-                    .auto_sized()
-                    .current_pos(position)
+                Area::new(Id::new("dragging_disk"))
+                    .order(Order::Foreground)
+                    .interactable(false)
+                    .movable(false)
+                    .fixed_pos(position - size / 2.0)
                     .show(ui.ctx(), |ui| {
-                        self.draw_disk(ui, disk_number, width_step, disk_height);
+                        self.draw_disk(ui, disk_number, max_width, disk_height);
                     });
             }
         }
