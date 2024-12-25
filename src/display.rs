@@ -1,6 +1,6 @@
 use std::{fmt::Debug, sync::Arc, time::{Duration, Instant}};
 
-use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Key, Layout, Response, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric};
+use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, CentralPanel, Color32, ComboBox, Direction, DragAndDrop, DragValue, Event, FontId, Key, Layout, Response, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric};
 use egui_dnd::Dnd;
 use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
@@ -23,6 +23,14 @@ const TEXT_COLOR: Color32 = Color32::WHITE;
 const TEXT_OUTLINE_COLOR: Color32 = Color32::BLACK;
 const SHARE_BUTTON_DURATION: Duration = Duration::from_millis(1000);
 const DEFAULT_QUICK_KEY: (Key, usize, usize) = (Key::Space, 1, 2);
+
+const TIME_ESTIMATIONS: &[(&str, f64)] = &[
+    ("an expert physical player", 3.0),
+    ("a good virtual player", 6.0),
+    ("a really good virtual player", 9.0),
+    ("an expert good virtual player", 12.0),
+    ("a computer", 50000000.0),
+];
 
 static DEFAULT_HANOI_APP: Lazy<HanoiApp> = Lazy::new(|| {
     let mut hanoi_app = HanoiApp::default();
@@ -353,34 +361,35 @@ impl HanoiApp {
                 ui.label("There is no high score for these settings.");
             }
     
-            let required_moves = self.hanoi.required_moves();
-            let [expert_time_string, computer_time_string] = match required_moves {
-                RequiredMoves::Impossible => ["∞".to_string(), "∞".to_string()],
-                RequiredMoves::Count(moves) => {
-                    let moves = (moves - 1) as f64;
-                    let times = [
-                        moves / 3.0,
-                        moves / 50000000.0,
-                    ];
-                    times.map(|secs|
-                        if secs > Duration::MAX.as_secs_f64() {
-                            "∞".to_string()
-                        } else {
-                            pretty_duration(&Duration::from_secs_f64(secs), None)
-                        }
-                    )
-                }
-            };
-    
-            ui.label(format!("Estimated time for an expert player: {expert_time_string}"));
-            ui.label(format!("Estimated time for a computer: {computer_time_string}"));
-    
-            if matches!(required_moves, RequiredMoves::Impossible) {
-                ui.colored_label(Color32::RED, "Warning: Game is impossible. Increase the number of stacks or decrease the number of disks.");
-            }
+            self.draw_estimated_time(ui);
         });
 
         self.settings_window = settings_window;
+    }
+
+    pub fn draw_estimated_time(&self, ui: &mut Ui) {
+        let required_moves = self.hanoi.required_moves();
+
+        match required_moves {
+            RequiredMoves::Impossible => {
+                for (label, _) in TIME_ESTIMATIONS {
+                    ui.label(format!("Estimated time for {}: ∞", label));
+                }
+                ui.colored_label(Color32::RED, "Warning: Game is impossible. Increase the number of stacks or decrease the number of disks.");
+            }
+            RequiredMoves::Count(moves) => {
+                let moves = (moves - 1) as f64;
+                for (label, speed) in TIME_ESTIMATIONS {
+                    let secs = moves / speed;
+                    let time_string = if secs > Duration::MAX.as_secs_f64() {
+                        "∞".to_string()
+                    } else {
+                        pretty_duration(&Duration::from_secs_f64(secs), None)
+                    };
+                    ui.label(format!("Estimated time for {}: {}", label, time_string));
+                }
+            }
+        }
     }
 
     pub fn draw_replays_window(&mut self, ctx: &egui::Context) {
