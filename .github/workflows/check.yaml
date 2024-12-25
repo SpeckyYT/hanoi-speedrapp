@@ -18,7 +18,7 @@ jobs:
           macos-latest,
           # wasm32-wasi,
         ]
-        rust: [stable, 1.80.0] # beta, nightly
+        rust: [stable] # beta, nightly, 1.80.0
     steps:
       - uses: actions/checkout@v2
         with: {submodules: true}
