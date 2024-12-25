@@ -1,24 +1,34 @@
-on: [ push, pull_request ]
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+name: CI
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
 jobs:
   build:
-    name: Build ${{ matrix.target }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.target }}
     strategy:
-      fail-fast: false
       matrix:
         target: [
-          x86_64-pc-windows-gnu,
-          x86_64-unknown-linux-musl,
-          # x86_64-apple-darwin,
+          windows-latest,
+          ubuntu-latest,
+          macos-latest,
           # wasm32-wasi,
         ]
+        rust: [stable, 1.80.0] # beta, nightly
     steps:
-      - uses: actions/checkout@master
-      - name: Compile
-        uses: rust-build/rust-build.action@v1.4.5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          RUSTTARGET: ${{ matrix.target }}
-          EXTRA_FILES: "README.md LICENSE"
-          UPLOAD_MODE: none
+      - uses: actions/checkout@v2
+        with: {submodules: true}
+      - uses: actions-rs/toolchain@v1
+        with: {profile: minimal, toolchain: '${{ matrix.rust }}', override: true}
+      - run: cargo build
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with: {profile: minimal, toolchain: beta, override: true, components: clippy}
+      - run: cargo clippy
