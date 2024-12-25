@@ -251,6 +251,7 @@ impl HanoiApp {
                     .order(Order::Foreground)
                     .interactable(false)
                     .movable(false)
+                    .fade_in(false)
                     .fixed_pos(position - size / 2.0)
                     .show(ui.ctx(), |ui| {
                         self.draw_disk(ui, disk_number, max_width, disk_height);
@@ -608,6 +609,7 @@ impl HanoiApp {
                         (self.quick_keys.len() != self.hanoi.poles_count * (self.hanoi.poles_count - 1))
                             .then_some(format!("⌨️ {} quick keys", self.quick_keys.len()).as_str()),
                         time_string.contains("69").then_some("🤣 0 bitches"),
+                        time_string.contains("247").then_some("😱 #247"),
                     ]
                         .into_iter()
                         .flatten()
