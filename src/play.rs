@@ -57,7 +57,7 @@ impl HanoiApp {
     }
 
     pub fn drag_and_drop_play(&mut self, ctx: &Context, poles: Vec<Response>) {
-        if matches!(self.state, GameState::Finished(_)) {
+        if matches!(self.state, GameState::Finished(_)) || matches!(self.player, PlayerKind::Replay(_, _)) {
             self.dragging_pole = None;
             return;
         }

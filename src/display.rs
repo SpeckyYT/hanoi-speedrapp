@@ -299,6 +299,8 @@ impl HanoiApp {
                     };
                     ui.add(Slider::new(&mut self.hanoi.start_pole, 1..=self.hanoi.poles_count).text("Start pole"));
                 );
+
+                ui.add_space(10.0);
     
                 let mut any_pole = self.hanoi.end_pole.is_none();
                 ui.checkbox(&mut any_pole, "Any end pole");
@@ -320,9 +322,13 @@ impl HanoiApp {
 
             ui.checkbox(&mut self.reset_on_invalid_move, "Reset on invalid move");
 
+            ui.add_space(10.0);
+
             set_enum_setting(ui, &mut self.color_theme);
             set_enum_setting(ui, &mut self.poles_position);
     
+            ui.add_space(10.0);
+
             ui.collapsing("Hotkeys", |ui| {
                 ui.horizontal(|ui| {
                     ui.label("Undo");
@@ -355,7 +361,7 @@ impl HanoiApp {
                 });
             });
 
-            ui.separator();
+            ui.add_space(10.0);
 
             ui.add_enabled_ui(!matches!(self.state, GameState::Playing(_)) && !self.equal_settings(&DEFAULT_HANOI_APP), |ui| {
                 if ui.button("Default Settings").double_clicked() {
