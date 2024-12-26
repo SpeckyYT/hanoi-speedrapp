@@ -16,6 +16,7 @@ jobs:
   build:
     runs-on: ${{ matrix.target }}
     strategy:
+      fail-fast: false
       matrix:
         target:
           - windows-latest
@@ -36,12 +37,14 @@ jobs:
         run: cargo build
       - if: ${{ github.event_name == 'release' }}
         run: cargo build --release
-      - if: ${{ github.event_name == 'release' }}
-        uses: ncipollo/release-action@v1
+      - uses: ncipollo/release-action@v1
+        if: startsWith(github.ref, 'refs/tags/') 
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref }}
           name: Release ${{ github.ref }}
+          # tag: ${{ github.ref }}_release # not required apparently?
+          generateReleaseNotes: true
+          allowUpdates: true
           body: Release of hanoi-speedrapp
           artifacts: |
             target/debug/hanoi-speedrapp
