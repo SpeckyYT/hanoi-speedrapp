@@ -33,6 +33,7 @@ pub enum ColorTheme {
     Bob,
     Peter,
     Eric,
+    Steve,
 }
 
 impl ColorTheme {
@@ -57,6 +58,7 @@ impl ColorTheme {
             ColorTheme::Bob => spread(THEME_BOB_COLORS),
             ColorTheme::Peter => spread(THEME_PETER_COLORS),
             ColorTheme::Eric => spread(THEME_ERIC_COLORS),
+            ColorTheme::Steve => spread(THEME_STEVE_COLORS),
         }
     }
     pub fn to_emojis(self) -> (char, char, char) {
@@ -69,6 +71,7 @@ impl ColorTheme {
             ColorTheme::Bob => ('🟨', '⬜', '🟫'),
             ColorTheme::Peter => ('🟫', '⬜', '🟩'),
             ColorTheme::Eric => ('🟦', '⬜', '🟥'),
+            ColorTheme::Steve => ('🟫', '🟩', '🟦'),
         }
     }
 }
@@ -122,6 +125,15 @@ pub const THEME_ERIC_COLORS: &[Color32] = &[
     Color32::from_rgb(238, 50, 83),
     Color32::from_rgb(132, 77, 56),
     Color32::from_rgb(48, 46, 60),
+];
+
+pub const THEME_STEVE_COLORS: &[Color32] = &[
+    Color32::from_rgb(43, 30, 13),
+    Color32::from_rgb(169, 125, 100),
+    Color32::from_rgb(73, 70, 151),
+    Color32::from_rgb(14, 174, 174),
+    Color32::from_rgb(107, 107, 107),
+    // Color32::from_rgb(49, 48, 43),
 ];
 
 gradients_generator!{
