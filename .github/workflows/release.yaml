@@ -36,11 +36,11 @@ jobs:
         run: cargo build
       - if: ${{ github.event_name == 'release' }}
         run: cargo build --release
-      # - if: ${{ github.event_name == 'release' }}
-      - uses: ncipollo/release-action@v1
+      - if: ${{ github.event_name == 'release' }}
+        uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          # tag: ${{ github.ref }}
+          tag: ${{ github.ref }}
           name: Release ${{ github.ref }}
           body: Release of hanoi-speedrapp
           artifacts: |
