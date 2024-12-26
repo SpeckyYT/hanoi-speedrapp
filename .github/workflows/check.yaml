@@ -3,6 +3,8 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+  release:
+    types: [created]
 name: CI
 env:
   CARGO_TERM_COLOR: always
@@ -25,6 +27,8 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with: {profile: minimal, toolchain: '${{ matrix.rust }}', override: true}
       - run: cargo build
+      - if: ${{ github.event_name == 'release' }}
+        run: cargo build --release
   clippy:
     runs-on: ubuntu-latest
     steps:
@@ -32,3 +36,37 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with: {profile: minimal, toolchain: beta, override: true, components: clippy}
       - run: cargo clippy
+  release:
+    runs-on: ${{ matrix.target }}
+    # if: ${{ github.event_name == 'release' }}
+    needs: build 
+    strategy:
+      matrix:
+        target: [
+          windows-latest,
+          ubuntu-latest,
+          macos-latest,
+          # wasm32-wasi,
+        ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # not sure what this is for
+      # - name: Download artifact
+      #   uses: actions/download-artifact@v2
+      #   with:
+      #     name: hanoi-speedrapp
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref }}
+          name: Release ${{ github.ref }}
+          body: "Release of hanoi-speedrapp"
+          artifacts:
+            target/debug/hanoi-speedrapp
+            target/debug/hanoi-speedrapp.*
+            target/release/hanoi-speedrapp
+            target/release/hanoi-speedrapp.*
