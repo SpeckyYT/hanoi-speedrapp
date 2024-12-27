@@ -13,7 +13,7 @@ on:
 
 env:
   BIN_NAME: hanoi-speedrapp
-  PROJECT_NAME: Hanoi Speedrapp
+  PROJECT_NAME: HanoiSpeedrapp
   REPO_NAME: SpeckyYT/hanoi-speedrapp
 
 jobs:
