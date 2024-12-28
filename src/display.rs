@@ -608,6 +608,7 @@ impl HanoiApp {
                         self.hanoi.illegal_moves.then_some("👮 Illegal moves"),
                         (self.quick_keys.len() != self.hanoi.poles_count * (self.hanoi.poles_count - 1))
                             .then_some(format!("⌨️ {} quick keys", self.quick_keys.len()).as_str()),
+                        matches!(self.player, PlayerKind::Replay(_, _)).then_some("🎥 Replay"),
                         time_string.contains("69").then_some("🤣 0 bitches"),
                         time_string.contains("247").then_some("😱 #247"),
                     ]
