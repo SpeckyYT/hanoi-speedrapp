@@ -1,6 +1,6 @@
 use std::{fmt::Debug, sync::Arc, time::{Duration, Instant}};
 
-use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, Area, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Id, Key, Layout, Order, Response, RichText, Sense, Slider, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric};
+use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, Area, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Id, Key, LayerId, Layout, Order, Painter, Pos2, Response, RichText, Sense, Slider, Stroke, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric};
 use egui_dnd::Dnd;
 use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use strum::{EnumIter, IntoEnumIterator};
 use themes::draw_share_tower;
 
-use crate::{hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, play::PlayerKind, GameState, HanoiApp, APP_NAME};
+use crate::{get_cursor_position, hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, play::PlayerKind, GameState, HanoiApp, APP_NAME};
 
 pub mod themes;
 
@@ -102,13 +102,15 @@ impl HanoiApp {
     pub fn draw_central_panel(&mut self, ctx: &egui::Context) {
         puffin::profile_function!();
 
+        let pointer_pos = get_cursor_position(ctx);
+
         CentralPanel::default()
         .show(ctx, |ui| {
             if self.blindfold && matches!((&self.player, &self.state), (PlayerKind::Human, GameState::Playing(_))) {
                 self.draw_blindfold(ui);
             } else {
-                let poles = self.draw_poles(ui);
-                self.drag_and_drop_play(ctx, poles);
+                let poles = self.draw_poles(ui, pointer_pos);
+                self.drag_and_drop_play(poles, pointer_pos);
                 self.draw_dragging_disk(ui);
             }
             self.draw_windows(ui.ctx());
@@ -132,12 +134,19 @@ impl HanoiApp {
         });
     }
 
-    pub fn draw_poles(&mut self, ui: &mut Ui) -> Vec<Response> {
+    pub fn draw_poles(&mut self, ui: &mut Ui, pointer_pos: Option<Pos2>) -> Vec<Response> {
         puffin::profile_function!();
 
         ui.columns(self.hanoi.poles_count, |uis| {
-            uis.iter_mut().enumerate()
-                .map(|(i, ui)| self.draw_pole(ui, i).interact(Sense::drag()))
+            uis.iter_mut()
+                .enumerate()
+                .map(|(i, ui)| {
+                    let pole = self.draw_pole(ui, i).interact(Sense::drag());
+                    if let Some(pointer_pos) = pointer_pos {
+                        self.draw_pole_hover(ui, &pole, pointer_pos);
+                    }
+                    pole
+                })
                 .collect::<Vec<Response>>()
         })
     }
@@ -187,6 +196,13 @@ impl HanoiApp {
                 ui.add_space(ui.available_height()); // this is useful drag and drop
             }
         ).response
+    }
+
+    pub fn draw_pole_hover(&mut self, ui: &mut Ui, pole: &Response, pointer_pos: Pos2) {
+        if pole.rect.contains(pointer_pos) {
+            Painter::new(ui.ctx().clone(), LayerId::background(), pole.rect)
+                .rect(pole.rect, 20.0, Color32::from_black_alpha(16), Stroke::NONE);
+        }
     }
 
     pub fn calculate_disk_size(&self, disk_number: usize, max_width: f32, disk_height: f32) -> Vec2 {

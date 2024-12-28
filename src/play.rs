@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use eframe::egui::{self, Context, Response};
+use eframe::egui::{self, Pos2, Response};
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
@@ -56,7 +56,7 @@ impl HanoiApp {
         }
     }
 
-    pub fn drag_and_drop_play(&mut self, ctx: &Context, poles: Vec<Response>) {
+    pub fn drag_and_drop_play(&mut self, poles: Vec<Response>, pointer_pos: Option<Pos2>) {
         if matches!(self.state, GameState::Finished(_)) || matches!(self.player, PlayerKind::Replay(_, _)) {
             self.dragging_pole = None;
             return;
@@ -72,13 +72,14 @@ impl HanoiApp {
             },
             Some(from) => {
                 if poles[from].drag_stopped() {
-                    let pointer_position = ctx.input(|i| i.pointer.latest_pos()).unwrap_or_default();
-                    poles.iter().enumerate().for_each(|(to, pole)| {
-                        if from != to && pole.rect.contains(pointer_position) {
-                            self.full_move(from, to);
-                            self.reset_undo();
-                        }
-                    });
+                    if let Some(pointer_position) = pointer_pos {
+                        poles.iter().enumerate().for_each(|(to, pole)| {
+                            if from != to && pole.rect.contains(pointer_position) {
+                                self.full_move(from, to);
+                                self.reset_undo();
+                            }
+                        });
+                    }
                     self.dragging_pole = None;
                 }
             },

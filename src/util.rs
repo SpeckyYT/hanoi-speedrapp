@@ -1,4 +1,4 @@
-use eframe::egui::{self, Key, Modifiers};
+use eframe::egui::{self, Context, Key, Modifiers, Pos2};
 
 use crate::{play::PlayerKind, GameState, HanoiApp};
 
@@ -51,4 +51,13 @@ pub fn quick_keys() -> Vec<(Key, usize, usize)> {
         (J, 3, 1),
         (K, 3, 2),
     ]
+}
+
+#[inline]
+pub fn get_cursor_position(ctx: &Context) -> Option<Pos2> {
+    ctx.input(|i| {
+        let hover = i.pointer.hover_pos();
+        let interact = i.pointer.interact_pos();
+        hover.or(interact)
+    })
 }
