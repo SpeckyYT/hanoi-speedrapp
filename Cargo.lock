@@ -1680,7 +1680,6 @@ dependencies = [
 name = "hanoi-speedrapp"
 version = "0.3.9"
 dependencies = [
- "arboard",
  "arrayvec",
  "cached",
  "chrono",

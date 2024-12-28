@@ -573,15 +573,15 @@ impl HanoiApp {
             let is_optimal = self.moves <= required_moves; 
 
             let time_f64 = time.as_secs_f64();
-            
-            static LAST_SHARE: Lazy<Arc<Mutex<(u8, Instant)>>> = Lazy::new(|| Arc::new(Mutex::new((0, Instant::now()))));
-    
-            let button_text = match *LAST_SHARE.lock() {
-                (2, instant) if instant.elapsed() < SHARE_BUTTON_DURATION => "Copied to clipboard!",
-                (1, instant) if instant.elapsed() < SHARE_BUTTON_DURATION => "Failed to copy...",
-                _ => "Share",
+
+            static LAST_SHARE: Lazy<Arc<Mutex<Instant>>> = Lazy::new(|| Arc::new(Mutex::new(Instant::now() - SHARE_BUTTON_DURATION)));
+
+            let button_text = if LAST_SHARE.lock().elapsed() < SHARE_BUTTON_DURATION {
+                "Copied to clipboard!"
+            } else {
+                "Share"
             };
-    
+
             if ui.button(button_text).clicked() {
                 let time_string = format!("{:.3?}", time_f64);
                 let tower_share = draw_share_tower(self.color_theme, self.poles_position);
@@ -617,13 +617,11 @@ impl HanoiApp {
                         .join("\n"),
                 );
     
-                let result = if let Ok(mut clipboard) = arboard::Clipboard::new() {
-                    clipboard.set_text(share_text).is_ok()
-                } else {
-                    false
-                } as u8 + 1;
+                ui.output_mut(|output| {
+                    output.copied_text = share_text.to_string();
+                });
     
-                *LAST_SHARE.lock() = (result, Instant::now());
+                *LAST_SHARE.lock() = Instant::now();
             }
         }
     }    
