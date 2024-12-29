@@ -1,6 +1,6 @@
 use std::{fmt::Debug, sync::Arc, time::{Duration, Instant}};
 
-use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, Area, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Id, Key, LayerId, Layout, Order, Painter, Pos2, Response, RichText, Sense, Slider, Stroke, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric};
+use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, Area, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Id, Key, LayerId, Layout, Order, Painter, Pos2, Response, RichText, Sense, Slider, Spacing, Stroke, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric};
 use egui_dnd::Dnd;
 use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
@@ -137,18 +137,25 @@ impl HanoiApp {
     pub fn draw_poles(&mut self, ui: &mut Ui, pointer_pos: Option<Pos2>) -> PolesVec<Response> {
         puffin::profile_function!();
 
-        ui.columns(self.hanoi.poles_count, |uis| {
-            uis.iter_mut()
-                .enumerate()
-                .map(|(i, ui)| {
-                    let pole = self.draw_pole(ui, i).interact(Sense::drag());
-                    if let Some(pointer_pos) = pointer_pos {
-                        self.draw_pole_hover(ui, &pole, pointer_pos);
-                    }
-                    pole
-                })
-                .collect::<PolesVec<Response>>()
-        })
+        ui.scope(|ui| {
+            let style = ui.style_mut();
+            let previous_spacing = style.spacing.item_spacing;
+            style.spacing.item_spacing = Vec2::new(0.0, 0.0);
+
+            ui.columns(self.hanoi.poles_count, |uis| {
+                uis.iter_mut()
+                    .enumerate()
+                    .map(|(i, ui)| {
+                        ui.style_mut().spacing.item_spacing = previous_spacing;
+                        let pole = self.draw_pole(ui, i).interact(Sense::drag());
+                        if let Some(pointer_pos) = pointer_pos {
+                            self.draw_pole_hover(ui, &pole, pointer_pos);
+                        }
+                        pole
+                    })
+                    .collect::<PolesVec<Response>>()
+            })
+        }).inner
     }
 
     pub fn draw_pole(&mut self, ui: &mut Ui, i: usize) -> Response {
