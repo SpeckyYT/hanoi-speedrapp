@@ -1698,6 +1698,7 @@ dependencies = [
  "serde",
  "serde_with",
  "strum",
+ "winapi",
 ]
 
 [[package]]

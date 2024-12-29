@@ -30,6 +30,7 @@ fn main() -> Result<(), eframe::Error> {
     let cli = Cli::parse();
     if cli.profile { enable_profiling() }
     if cli.backup { backup_save() }
+    hide_console_window();
 
     HanoiApp::run(cli)
 }
@@ -225,5 +226,12 @@ fn backup_save() {
                 break;
             }
         }
+    }
+}
+
+fn hide_console_window() {
+    if !cfg!(debug_assertions) {
+        #[cfg(windows)]
+        unsafe { winapi::um::wincon::FreeConsole() };
     }
 }
