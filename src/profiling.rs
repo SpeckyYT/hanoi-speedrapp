@@ -6,7 +6,7 @@ pub fn enable_profiling() {
     
     match puffin_http::Server::new(&server_addr) {
         Ok(server) => {
-            eprintln!("Run this to view profiling data: puffin_viewer --url {server_addr_http}");
+            println!("Run this to view profiling data: puffin_viewer --url {server_addr_http}");
             std::process::Command::new("puffin_viewer")
                 .arg("--url")
                 .arg(&server_addr_http)

@@ -311,6 +311,8 @@ impl HanoiApp {
             let max_poles = if self.extra_mode { MAX_POLES } else { MAX_POLES_NORMAL };
     
             ui.add_enabled_ui(!matches!(self.state, GameState::Playing(_)), |ui| {
+                puffin::profile_scope!("hanoi_settings");
+
                 check_changed!(
                     self.soft_reset();
                     ui.add(Slider::new(&mut self.hanoi.disks_count, 1..=max_disks).text("Disks"));
@@ -354,6 +356,8 @@ impl HanoiApp {
             ui.add_space(10.0);
 
             ui.collapsing("Hotkeys", |ui| {
+                puffin::profile_scope!("hotkeys_settings");
+
                 ui.horizontal(|ui| {
                     ui.label("Undo");
                     key_input(ui, &mut self.undo_key);
@@ -368,6 +372,7 @@ impl HanoiApp {
                 self.quick_keys.retain(|(key, _, _)| !matches!(key, Key::Backspace | Key::Delete));
 
                 Dnd::new(ui, "dnd_quick_keys").show_vec(&mut self.quick_keys, |ui, (key, from, to), handle, _state| {
+                    puffin::profile_scope!("hotkey_line");
                     ui.horizontal(|ui| {
                         handle.ui(ui, |ui| {
                             key_input(ui, key);
@@ -388,6 +393,8 @@ impl HanoiApp {
             ui.add_space(10.0);
 
             ui.add_enabled_ui(!matches!(self.state, GameState::Playing(_)) && !self.equal_settings(&DEFAULT_HANOI_APP), |ui| {
+                puffin::profile_scope!("default_settings");
+
                 if ui.button("Default Settings").double_clicked() {
                     let highscores = self.highscores.clone();
                     *self = (*DEFAULT_HANOI_APP).clone();
@@ -409,6 +416,8 @@ impl HanoiApp {
     }
 
     pub fn draw_estimated_time(&self, ui: &mut Ui) {
+        puffin::profile_function!();
+
         let required_moves = self.hanoi.required_moves();
 
         match required_moves {
@@ -658,6 +667,7 @@ impl HanoiApp {
 }
 
 fn key_input(ui: &mut Ui, key: &mut Key) -> Response {
+    puffin::profile_function!();
     let mut from_string = format!("{:?}", key);
     let resp = ui.text_edit_singleline(&mut from_string);
     if resp.has_focus() {
@@ -671,6 +681,7 @@ fn key_input(ui: &mut Ui, key: &mut Key) -> Response {
 }
 
 fn integer_input<T: Numeric>(ui: &mut Ui, input: &mut T, extra_mode: bool) -> Response {
+    puffin::profile_function!();
     let resp = ui.add(
         DragValue::new(input)
             .speed(0.0)
@@ -684,6 +695,7 @@ fn set_enum_setting<T>(ui: &mut Ui, selected: &mut T)
 where
     T: IntoEnumIterator + PartialEq + Copy + Debug + 'static,
 {
+    puffin::profile_function!();
     let type_string = std::any::type_name::<T>();
     ComboBox::from_label(type_string.split("::").last().unwrap_or(type_string))
         .selected_text(format!("{:?}", selected))
