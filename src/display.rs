@@ -1,6 +1,6 @@
 use std::{fmt::Debug, sync::Arc, time::{Duration, Instant}};
 
-use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, Area, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Id, Key, LayerId, Layout, Order, Painter, Pos2, Response, RichText, Sense, Slider, Spacing, Stroke, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric};
+use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, Area, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Id, Key, LayerId, Layout, Order, Painter, Pos2, Response, RichText, Sense, Slider, Stroke, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric};
 use egui_dnd::Dnd;
 use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
@@ -552,6 +552,8 @@ impl HanoiApp {
         .collapsible(false)
         .auto_sized()
         .show(ctx, |ui| {
+            ui.heading(format!("{duration:.3?}"));
+
             let required_moves = self.hanoi.required_moves().to_number();
             if self.moves <= required_moves {
                 ui.label("You had the optimal solution!");
