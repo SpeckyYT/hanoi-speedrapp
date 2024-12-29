@@ -1,5 +1,6 @@
 use std::time::{Duration, Instant};
 
+use arrayvec::ArrayVec;
 use chrono::Datelike;
 use clap::Parser;
 use cli::Cli;
@@ -9,7 +10,7 @@ use highscores::{Header, Highscores};
 use play::PlayerKind;
 use profiling::enable_profiling;
 use serde::{Deserialize, Serialize};
-use hanoi::HanoiGame;
+use hanoi::{HanoiGame, MAX_POLES};
 use serde_with::{serde_as, DefaultOnError};
 use util::*;
 
@@ -22,6 +23,8 @@ mod util;
 mod profiling;
 
 const APP_NAME: &str = "Towers of Hanoi - Speedrapp Edition";
+
+type PolesVec<T> = ArrayVec<T, {MAX_POLES}>;
 
 fn main() -> Result<(), eframe::Error> {
     let cli = Cli::parse();

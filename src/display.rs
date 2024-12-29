@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use strum::{EnumIter, IntoEnumIterator};
 use themes::draw_share_tower;
 
-use crate::{get_cursor_position, hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, play::PlayerKind, GameState, HanoiApp, APP_NAME};
+use crate::{get_cursor_position, hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, play::PlayerKind, GameState, HanoiApp, PolesVec, APP_NAME};
 
 pub mod themes;
 
@@ -134,7 +134,7 @@ impl HanoiApp {
         });
     }
 
-    pub fn draw_poles(&mut self, ui: &mut Ui, pointer_pos: Option<Pos2>) -> Vec<Response> {
+    pub fn draw_poles(&mut self, ui: &mut Ui, pointer_pos: Option<Pos2>) -> PolesVec<Response> {
         puffin::profile_function!();
 
         ui.columns(self.hanoi.poles_count, |uis| {
@@ -147,7 +147,7 @@ impl HanoiApp {
                     }
                     pole
                 })
-                .collect::<Vec<Response>>()
+                .collect::<PolesVec<Response>>()
         })
     }
 
@@ -630,10 +630,14 @@ impl HanoiApp {
                     ]
                         .into_iter()
                         .flatten()
-                        .collect::<Vec<&str>>()
-                        .join("\n"),
+                        .fold(String::new(), |mut a, b| {
+                            a += b;
+                            a += "\n";
+                            a
+                        })
+                        .trim_end()
                 );
-    
+
                 ui.output_mut(|output| {
                     output.copied_text = share_text.to_string();
                 });

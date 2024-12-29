@@ -4,7 +4,7 @@ use eframe::egui::{self, Pos2, Response};
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
-use crate::{highscores::Score, GameState, HanoiApp};
+use crate::{highscores::Score, GameState, HanoiApp, PolesVec};
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
 pub enum PlayerKind {
@@ -56,7 +56,7 @@ impl HanoiApp {
         }
     }
 
-    pub fn drag_and_drop_play(&mut self, poles: Vec<Response>, pointer_pos: Option<Pos2>) {
+    pub fn drag_and_drop_play(&mut self, poles: PolesVec<Response>, pointer_pos: Option<Pos2>) {
         if matches!(self.state, GameState::Finished(_)) || matches!(self.player, PlayerKind::Replay(_, _)) {
             self.dragging_pole = None;
             return;
