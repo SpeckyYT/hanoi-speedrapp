@@ -1,10 +1,16 @@
 use std::time::Instant;
 
-use eframe::egui::{self, Pos2, Response};
+use eframe::egui::{self, Key, Pos2, Response};
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
 use crate::{highscores::Score, GameState, HanoiApp, PolesVec};
+
+pub const SWIFT_KEYS: &[Key] = &[
+    Key::Num1, Key::Num2, Key::Num3,
+    Key::Num4, Key::Num5, Key::Num6,
+    Key::Num7, Key::Num8, Key::Num9,
+];
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
 pub enum PlayerKind {
@@ -24,6 +30,7 @@ impl HanoiApp {
                 self.moves += 1;
                 if let GameState::Playing(time) = self.state {
                     self.hanoi.moves_history.push((time.elapsed(), from, to));
+                    self.reset_undo();
                 }
             } else if self.reset_on_invalid_move {
                 self.soft_reset();
@@ -32,12 +39,16 @@ impl HanoiApp {
     }
 
     pub fn player_play(&mut self, ctx: &egui::Context) {
+        self.quick_key_play(ctx);
+        self.swift_keys_play(ctx);
+    }
+
+    pub fn quick_key_play(&mut self, ctx: &egui::Context) {
         ctx.input(|i| {
             for qki in 0..self.quick_keys.len() {
                 let (key, from, to) = self.quick_keys[qki];
                 if i.key_pressed(key) {
                     self.full_move(from - 1, to - 1);
-                    self.reset_undo();
                 }
             }
 
@@ -76,7 +87,6 @@ impl HanoiApp {
                         poles.iter().enumerate().for_each(|(to, pole)| {
                             if from != to && pole.rect.contains(pointer_position) {
                                 self.full_move(from, to);
-                                self.reset_undo();
                             }
                         });
                     }
@@ -84,6 +94,22 @@ impl HanoiApp {
                 }
             },
         }
+    }
+
+    pub fn swift_keys_play(&mut self, ctx: &egui::Context) {
+        ctx.input(|input| {
+            SWIFT_KEYS.iter().enumerate().for_each(|(i, k)| {
+                if input.key_pressed(*k) {
+                    self.swift_keys_pole = match self.swift_keys_pole {
+                        None => Some(i),
+                        Some(from) => {
+                            self.full_move(from, i);
+                            None
+                        }
+                    }
+                }
+            });
+        });
     }
 
     pub fn undo_move(&mut self) {

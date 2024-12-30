@@ -100,6 +100,9 @@ struct HanoiApp {
     #[serde(skip, default)]
     #[serde_as(deserialize_as = "DefaultOnError")]
     dragging_pole: Option<usize>,
+    #[serde(skip, default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
+    swift_keys_pole: Option<usize>,
 
     // windows
     #[serde(default = "falsy")]
@@ -141,6 +144,7 @@ impl Default for HanoiApp {
             undo_key: undo_key(),
             quick_keys: quick_keys(),
             dragging_pole: None,
+            swift_keys_pole: None,
 
             settings_window: false,
             replays_window: false,
@@ -215,11 +219,13 @@ fn backup_save() {
     if let Some(path) = eframe::storage_dir(APP_NAME) {
         let main_file = path.join(format!("{APP_KEY}.ron"));
 
+        // let's assume that this process does not take a full day to complete
+        let now = chrono::Utc::now();
+        let year = now.year();
+        let month = now.month();
+        let day = now.day();
+
         for i in 0..1000 {
-            let now = chrono::Utc::now();
-            let year = now.year();
-            let month = now.month();
-            let day = now.day();
             let postfix = if i == 0 { "".to_string() } else { format!(" {}", i) };
             let output_file = path.join(format!("{APP_KEY} BACKUP {year}_{month}_{day}{postfix}.ron"));
             if !output_file.exists() && std::fs::copy(&main_file, &output_file).is_ok() {

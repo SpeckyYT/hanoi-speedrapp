@@ -112,6 +112,7 @@ impl HanoiApp {
                 let poles = self.draw_poles(ui, pointer_pos);
                 self.drag_and_drop_play(poles, pointer_pos);
                 self.draw_dragging_disk(ui);
+                self.draw_swift_disk(ui);
             }
             self.draw_windows(ui.ctx());
         });
@@ -178,7 +179,11 @@ impl HanoiApp {
                 let mut disks_skipped = 0;
 
                 self.hanoi.poles[i].iter().enumerate().for_each(|(j, &disk_number)| {
-                    if self.dragging_pole == Some(i) && j == self.hanoi.poles[i].len() - 1 {
+                    let is_drag = self.dragging_pole == Some(i);
+                    let is_swift = self.swift_keys_pole == Some(i);
+                    let is_count = is_drag as usize + is_swift as usize;
+
+                    if j >= self.hanoi.poles[i].len() - is_count {
                         disks_skipped += 1;
                     } else {
                         self.draw_disk(
@@ -273,7 +278,29 @@ impl HanoiApp {
                 Area::new(Id::new("dragging_disk"))
                     .order(Order::Foreground)
                     .interactable(false)
-                    .movable(false)
+                    .fade_in(false)
+                    .fixed_pos(position - size / 2.0)
+                    .show(ui.ctx(), |ui| {
+                        self.draw_disk(ui, disk_number, max_width, disk_height);
+                    });
+            }
+        }
+    }
+
+    pub fn draw_swift_disk(&mut self, ui: &mut Ui) {
+        // todo: this is turning into a copy and paste hell, multiple ways of playing should become modular
+        if let Some(from) = self.swift_keys_pole {
+            if let Some(&disk_number) = self.hanoi.poles[from].last() {
+                let available_size = ui.ctx().available_rect();
+                let disk_height = DISK_HEIGHT.min(available_size.height());
+                let spacing_x = ui.style_mut().spacing.item_spacing.x;
+                let max_width = available_size.width() / self.hanoi.poles_count as f32 - spacing_x * 2.0;
+                let size = self.calculate_disk_size(disk_number, max_width, disk_height);
+                let position = Pos2::new(available_size.width() / 2.0, (size.y * 2.0).min(available_size.height() / 2.0));
+
+                Area::new(Id::new("swift_disk"))
+                    .order(Order::Foreground)
+                    .interactable(false)
                     .fade_in(false)
                     .fixed_pos(position - size / 2.0)
                     .show(ui.ctx(), |ui| {
