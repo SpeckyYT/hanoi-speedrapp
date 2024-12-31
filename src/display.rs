@@ -96,6 +96,10 @@ impl HanoiApp {
                     self.replays_window = !self.replays_window;
                 }
 
+                if ui.button("Input display").clicked() {
+                    self.input_display_window = !self.input_display_window;
+                }
+
                 if ui.button("Infos").clicked() {
                     self.infos_panel = !self.infos_panel;
                 }
@@ -127,6 +131,7 @@ impl HanoiApp {
 
         self.draw_settings_window(ctx);
         self.draw_replays_window(ctx);
+        self.draw_input_display_window(ctx);
 
         if let GameState::Finished(end) = self.state {
             self.draw_completed_window(ctx, end);
@@ -444,6 +449,36 @@ impl HanoiApp {
         });
 
         self.settings_window = settings_window;
+    }
+
+    pub fn draw_input_display_window(&mut self, ctx: &egui::Context) {
+        puffin::profile_function!();
+
+        let mut input_display_window = self.input_display_window;
+
+        Window::new("Input display")
+            .open(&mut input_display_window)
+            .auto_sized()
+            .show(ctx, |ui| {
+                ui.horizontal_wrapped(|ui| {
+                    for &(key, _from, _to) in &self.quick_keys {
+                        let button = ui.button(format!("{key:?}"));
+                        if ctx.input(|i| i.key_down(key)) {
+                            button.highlight();
+                        }
+                    }
+                });
+                let reset = ui.button(format!("{:?}", self.reset_key));
+                if ctx.input(|i| i.key_down(self.reset_key)) {
+                    reset.highlight();
+                }
+                let undo = ui.button(format!("{:?}", self.undo_key));
+                if ctx.input(|i| i.key_down(self.undo_key)) {
+                    undo.highlight();
+                }
+            });
+
+        self.input_display_window = input_display_window;
     }
 
     pub fn draw_infos_panel(&mut self, ctx: &egui::Context) {

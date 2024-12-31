@@ -113,6 +113,10 @@ struct HanoiApp {
     replays_window: bool,
     #[serde(default = "falsy")]
     #[serde_as(deserialize_as = "DefaultOnError")]
+    input_display_window: bool,
+
+    #[serde(default = "truthy")]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     infos_panel: bool,
 
     // other
@@ -151,7 +155,9 @@ impl Default for HanoiApp {
 
             settings_window: false,
             replays_window: false,
-            infos_panel: false,
+            input_display_window: false,
+
+            infos_panel: true,
 
             extra_mode: false,
 
