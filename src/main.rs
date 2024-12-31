@@ -111,6 +111,9 @@ struct HanoiApp {
     #[serde(default = "falsy")]
     #[serde_as(deserialize_as = "DefaultOnError")]
     replays_window: bool,
+    #[serde(default = "falsy")]
+    #[serde_as(deserialize_as = "DefaultOnError")]
+    infos_panel: bool,
 
     // other
     #[serde(skip, default = "falsy")]
@@ -148,6 +151,7 @@ impl Default for HanoiApp {
 
             settings_window: false,
             replays_window: false,
+            infos_panel: false,
 
             extra_mode: false,
 
@@ -207,6 +211,7 @@ impl App for HanoiApp {
         });
 
         self.draw_top_bar(ctx);
+        self.draw_infos_panel(ctx);
         self.draw_central_panel(ctx);
 
         if matches!(self.state, GameState::Playing(_)) {

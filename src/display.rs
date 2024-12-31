@@ -1,6 +1,6 @@
 use std::{fmt::Debug, sync::Arc, time::{Duration, Instant}};
 
-use eframe::{egui::{self, mutex::Mutex, vec2, Align, Align2, Area, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Id, Key, LayerId, Layout, Order, Painter, Pos2, Response, RichText, Sense, Slider, Stroke, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric};
+use eframe::{egui::{self, mutex::Mutex, panel::Side, vec2, Align, Align2, Area, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Id, Key, LayerId, Layout, Order, Painter, Pos2, Response, RichText, Sense, SidePanel, Slider, Stroke, TextStyle, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric};
 use egui_dnd::Dnd;
 use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
@@ -94,6 +94,10 @@ impl HanoiApp {
 
                 if ui.button("Replays").clicked() {
                     self.replays_window = !self.replays_window;
+                }
+
+                if ui.button("Infos").clicked() {
+                    self.infos_panel = !self.infos_panel;
                 }
             });
         });
@@ -440,6 +444,48 @@ impl HanoiApp {
         });
 
         self.settings_window = settings_window;
+    }
+
+    pub fn draw_infos_panel(&mut self, ctx: &egui::Context) {
+        if !self.infos_panel { return }
+
+        puffin::profile_function!();
+
+        SidePanel::new(Side::Right, "infos_panel")
+            .width_range(200.0..=600.0)
+            .default_width(600.0)
+            .show(ctx, |ui| {
+                let width = ui.fonts(|f|f.glyph_width(&TextStyle::Body.resolve(ui.style()), ' '));
+                ui.spacing_mut().item_spacing.x = width;
+
+                ui.vertical_centered(|ui| ui.heading(APP_NAME));
+                
+                ui.horizontal_wrapped(|ui| {
+                    ui.label("This is an app version of");
+                    ui.hyperlink_to("Tower of Hanoi,", "https://en.wikipedia.org/wiki/Tower_of_Hanoi");
+                    ui.label("where the controls are optimized for speed.");
+                });
+
+                // todo: these two should update depending on the settings
+                ui.label("Your goal is to move all disks to a different pole.");
+                ui.label("You can only move one disk at a time, and you cannot place a larger disk on top of a smaller one.");
+                // todo: maybe add a trait for different inputs, so that this updates automatically
+                ui.label("There are three ways to control this game.");
+
+                ui.horizontal_wrapped(|ui| {
+                    ui.label("Join the developer's");
+                    ui.hyperlink_to("Discord server", "https://discord.gg/4EecFku");
+                });
+                ui.horizontal_wrapped(|ui| {
+                    ui.label("Join related Tower of Hanoi");
+                    ui.hyperlink_to("Discord server", "https://discord.gg/tykwEuuYCt");
+                    ui.label("this is where most of the WR discussions happen");
+                });
+
+                if ui.button("Close").clicked() {
+                    self.infos_panel ^= true;
+                }
+            });
     }
 
     pub fn draw_estimated_time(&self, ui: &mut Ui) {
