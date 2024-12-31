@@ -30,7 +30,6 @@ impl HanoiApp {
                 self.moves += 1;
                 if let GameState::Playing(time) = self.state {
                     self.hanoi.moves_history.push((time.elapsed(), from, to));
-                    self.reset_undo();
                 }
             } else if self.reset_on_invalid_move {
                 self.soft_reset();
@@ -49,6 +48,7 @@ impl HanoiApp {
                 let (key, from, to) = self.quick_keys[qki];
                 if i.key_pressed(key) {
                     self.full_move(from - 1, to - 1);
+                    self.reset_undo();
                 }
             }
 
@@ -87,6 +87,7 @@ impl HanoiApp {
                         poles.iter().enumerate().for_each(|(to, pole)| {
                             if from != to && pole.rect.contains(pointer_position) {
                                 self.full_move(from, to);
+                                self.reset_undo();
                             }
                         });
                     }
@@ -104,6 +105,7 @@ impl HanoiApp {
                         None => Some(i),
                         Some(from) => {
                             self.full_move(from, i);
+                            self.reset_undo();
                             None
                         }
                     }
