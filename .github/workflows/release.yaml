@@ -72,12 +72,13 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: Run cargo test
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: ${{ matrix.cross }}
-          command: test
-          args: --release --locked --target ${{ matrix.target }}
+      # # we don't have tests
+      # - name: Run cargo test
+      #   uses: actions-rs/cargo@v1
+      #   with:
+      #     use-cross: ${{ matrix.cross }}
+      #     command: test
+      #     args: --release --locked --target ${{ matrix.target }}
 
       - name: Build release binary
         uses: actions-rs/cargo@v1
