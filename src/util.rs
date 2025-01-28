@@ -1,6 +1,6 @@
 use eframe::egui::{self, Context, Key, Modifiers, Pos2};
 
-use crate::{play::PlayerKind, GameState, HanoiApp};
+use crate::{play::{PlayerKind, HUMAN_PLAY}, GameState, HanoiApp};
 
 impl HanoiApp {
     pub fn soft_reset(&mut self) {
@@ -8,7 +8,7 @@ impl HanoiApp {
         self.state = GameState::Reset;
         self.player = PlayerKind::Human;
         self.moves = 0;
-        self.dragging_pole = None;
+        (*HUMAN_PLAY).lock().iter_mut().for_each(|p| p.reset(self));
     }
 
     pub fn equal_settings(&self, other: &Self) -> bool {

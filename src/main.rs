@@ -7,7 +7,7 @@ use cli::Cli;
 use display::{themes::ColorTheme, PolesPosition};
 use eframe::{egui::{self, Key}, App, Frame, HardwareAcceleration, NativeOptions, APP_KEY};
 use highscores::{Header, Highscores};
-use play::PlayerKind;
+use play::{PlayerKind, HUMAN_PLAY};
 use profiling::enable_profiling;
 use serde::{Deserialize, Serialize};
 use hanoi::{HanoiGame, MAX_POLES};
@@ -102,7 +102,7 @@ struct HanoiApp {
     dragging_pole: Option<usize>,
     #[serde(skip, default)]
     #[serde_as(deserialize_as = "DefaultOnError")]
-    swift_keys_pole: Option<usize>,
+    swift_pole: Option<usize>,
 
     // windows
     #[serde(default = "falsy")]
@@ -151,7 +151,7 @@ impl Default for HanoiApp {
             undo_key: undo_key(),
             quick_keys: quick_keys(),
             dragging_pole: None,
-            swift_keys_pole: None,
+            swift_pole: None,
 
             settings_window: false,
             replays_window: false,
@@ -205,7 +205,17 @@ impl App for HanoiApp {
         self.check_extra_mode(ctx);
 
         match self.player {
-            PlayerKind::Human => self.player_play(ctx),
+            PlayerKind::Human => {
+                (*HUMAN_PLAY).lock().iter_mut().for_each(|p| p.context_play(self, &ctx));
+                match self.state {
+                    GameState::Playing(start) if self.hanoi.finished() => {
+                        let elapsed = start.elapsed();
+                        self.state = GameState::Finished(elapsed);
+                        self.save_score(elapsed);
+                    },
+                    _ => {},
+                }
+            },
             PlayerKind::Bot => self.bot_play(),
             PlayerKind::Replay(..) => self.replay_play(),
         };

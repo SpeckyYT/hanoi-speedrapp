@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use strum::{EnumIter, IntoEnumIterator};
 use themes::draw_share_tower;
 
-use crate::{get_cursor_position, hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, play::PlayerKind, GameState, HanoiApp, PolesVec, APP_NAME};
+use crate::{get_cursor_position, hanoi::{RequiredMoves, MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, play::{PlayerKind, HUMAN_PLAY}, GameState, HanoiApp, PolesVec, APP_NAME};
 
 pub mod themes;
 
@@ -118,7 +118,7 @@ impl HanoiApp {
                 self.draw_blindfold(ui);
             } else {
                 let poles = self.draw_poles(ui, pointer_pos);
-                self.drag_and_drop_play(poles, pointer_pos);
+                (*HUMAN_PLAY).lock().iter_mut().for_each(|p| p.poles_play(self, &poles, pointer_pos));
                 self.draw_dragging_disk(ui);
                 self.draw_swift_disk(ui);
             }
@@ -189,7 +189,7 @@ impl HanoiApp {
 
                 self.hanoi.poles[i].iter().enumerate().for_each(|(j, &disk_number)| {
                     let is_drag = self.dragging_pole == Some(i);
-                    let is_swift = self.swift_keys_pole == Some(i);
+                    let is_swift = self.swift_pole == Some(i);
                     let is_count = is_drag as usize + is_swift as usize;
 
                     if j >= self.hanoi.poles[i].len() - is_count {
@@ -298,7 +298,7 @@ impl HanoiApp {
 
     pub fn draw_swift_disk(&mut self, ui: &mut Ui) {
         // todo: this is turning into a copy and paste hell, multiple ways of playing should become modular
-        if let Some(from) = self.swift_keys_pole {
+        if let Some(from) = self.swift_pole {
             if let Some(&disk_number) = self.hanoi.poles[from].last() {
                 let available_size = ui.ctx().available_rect();
                 let disk_height = DISK_HEIGHT.min(available_size.height());

@@ -1,16 +1,14 @@
-use std::time::Instant;
+use std::{sync::Arc, time::Instant};
 
-use eframe::egui::{self, Key, Pos2, Response};
+use eframe::egui::{self, mutex::Mutex, Pos2, Response};
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
 use crate::{highscores::Score, GameState, HanoiApp, PolesVec};
 
-pub const SWIFT_KEYS: &[Key] = &[
-    Key::Num1, Key::Num2, Key::Num3,
-    Key::Num4, Key::Num5, Key::Num6,
-    Key::Num7, Key::Num8, Key::Num9,
-];
+mod bot;
+mod replay;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
 pub enum PlayerKind {
@@ -18,6 +16,52 @@ pub enum PlayerKind {
     Human,
     Bot,
     Replay(Score, usize),
+}
+
+pub trait Play {
+    fn context_play(&mut self, _app: &mut HanoiApp, _ctx: &egui::Context) {}
+    fn poles_play(&mut self, _app: &mut HanoiApp, _poles: &PolesVec<Response>, _pointer_pos: Option<Pos2>) {}
+    fn reset(&mut self, _app: &mut HanoiApp) {}
+}
+
+macro_rules! human_play {
+    ($($mod:ident => $struct:ident,)*) => {
+        $(mod $mod;)*
+
+        pub enum HumanPlay {
+            $($struct($mod::$struct),)*
+        }
+        impl HumanPlay {
+            pub fn context_play(&mut self, app: &mut HanoiApp, ctx: &egui::Context) {
+                match self {
+                    $(HumanPlay::$struct(play) => play.context_play(app, ctx),)*
+                }
+            }
+            pub fn poles_play(&mut self, app: &mut HanoiApp, poles: &PolesVec<Response>, pointer_pos: Option<Pos2>) {
+                match self {
+                    $(HumanPlay::$struct(play) => play.poles_play(app, poles, pointer_pos),)*
+                }
+            }
+            pub fn reset(&mut self, app: &mut HanoiApp) {
+                match self {
+                    $(HumanPlay::$struct(play) => play.reset(app),)*
+                }
+            }
+        }
+        pub static HUMAN_PLAY: Lazy<Arc<Mutex<[HumanPlay; [$(stringify!($mod),)*].len()]>>> = Lazy::new(|| Arc::new(Mutex::new(
+            [
+                $(
+                    HumanPlay::$struct($mod::$struct::default()),
+                )*
+            ]
+        )));
+    };
+}
+
+human_play!{
+    quick_keys => QuickKeys,
+    swift_keys => SwiftKeys,
+    drag_and_drop => DragAndDrop,
 }
 
 impl HanoiApp {
@@ -36,135 +80,14 @@ impl HanoiApp {
             }
         }
     }
-
-    pub fn player_play(&mut self, ctx: &egui::Context) {
-        self.quick_key_play(ctx);
-        self.swift_keys_play(ctx);
-    }
-
-    pub fn quick_key_play(&mut self, ctx: &egui::Context) {
-        ctx.input(|i| {
-            for qki in 0..self.quick_keys.len() {
-                let (key, from, to) = self.quick_keys[qki];
-                if i.key_pressed(key) {
-                    self.full_move(from - 1, to - 1);
-                    self.reset_undo();
-                }
-            }
-
-            if matches!((&self.player, &self.state), (PlayerKind::Human, GameState::Playing(_))) && i.key_pressed(self.undo_key) {
-                self.undo_move();
-            }
-        });
-
-        match self.state {
-            GameState::Playing(start) if self.hanoi.finished() => {
-                let elapsed = start.elapsed();
-                self.state = GameState::Finished(elapsed);
-                self.save_score(elapsed);
-            },
-            _ => {},
-        }
-    }
-
-    pub fn drag_and_drop_play(&mut self, poles: PolesVec<Response>, pointer_pos: Option<Pos2>) {
-        if matches!(self.state, GameState::Finished(_)) || matches!(self.player, PlayerKind::Replay(_, _)) {
-            self.dragging_pole = None;
-            return;
-        }
-
-        match self.dragging_pole {
-            None => {
-                poles.iter().enumerate().for_each(|(i, pole)| {
-                    if pole.drag_started() {
-                        self.dragging_pole = Some(i);
-                    }
-                });
-            },
-            Some(from) => {
-                if poles[from].drag_stopped() {
-                    if let Some(pointer_position) = pointer_pos {
-                        poles.iter().enumerate().for_each(|(to, pole)| {
-                            if from != to && pole.rect.contains(pointer_position) {
-                                self.full_move(from, to);
-                                self.reset_undo();
-                            }
-                        });
-                    }
-                    self.dragging_pole = None;
-                }
-            },
-        }
-    }
-
-    pub fn swift_keys_play(&mut self, ctx: &egui::Context) {
-        ctx.input(|input| {
-            SWIFT_KEYS.iter().enumerate().for_each(|(i, k)| {
-                if input.key_pressed(*k) {
-                    self.swift_keys_pole = match self.swift_keys_pole {
-                        None => Some(i),
-                        Some(from) => {
-                            self.full_move(from, i);
-                            self.reset_undo();
-                            None
-                        }
-                    }
-                }
-            });
-        });
-    }
-
     pub fn undo_move(&mut self) {
         if let Some((_, from, to)) = self.undo_index.checked_sub(1).and_then(|i| self.hanoi.moves_history.get(i)) {
             self.full_move(*to, *from);
             self.undo_index -= 1;
         }
     }
-
     #[inline]
     pub fn reset_undo(&mut self) {
         self.undo_index = self.hanoi.moves_history.len();
-    }
-
-    pub fn bot_play(&mut self) {
-        if self.state == GameState::Reset {
-            let start_time = Instant::now();
-            self.state = GameState::Playing(start_time);
-            self.moves = 0;
-            fn hanoi_bot(game: &mut HanoiApp, n: usize, from_rod: usize, to_rod: usize, aux_rod: usize) {
-                if n > 0 {
-                    hanoi_bot(game, n - 1, from_rod, aux_rod, to_rod);
-                    if game.hanoi.shift(from_rod, to_rod) {
-                        game.moves += 1;
-                    }
-                    hanoi_bot(game, n - 1, aux_rod, to_rod, from_rod);
-                }
-            }
-            hanoi_bot(
-                self,
-                self.hanoi.disks_count,
-                self.hanoi.start_pole - 1,
-                (self.hanoi.end_pole.unwrap_or(self.hanoi.start_pole)) % self.hanoi.poles_count,
-                (self.hanoi.end_pole.unwrap_or(self.hanoi.start_pole + 1)) % self.hanoi.poles_count,
-            );
-            self.state = GameState::Finished(start_time.elapsed());
-        }
-    }
-
-    pub fn replay_play(&mut self) {
-        if let PlayerKind::Replay(ref game, ref mut index) = self.player {
-            if let Some((time, from, to)) = game.moves.get(*index) {
-                if let GameState::Playing(start) = self.state {
-                    if start.elapsed() >= *time {
-                        self.hanoi.shift(*from, *to);
-                        *index += 1;
-                        self.moves += 1;
-                        if *index >= game.moves.len() {
-                            self.state = GameState::Finished(game.time);
-                        }
-                    }
-                }
-            }
-        }
     }
 }
