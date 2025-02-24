@@ -1,6 +1,6 @@
 use std::{fmt::Debug, sync::Arc, time::{Duration, Instant}};
 
-use eframe::{egui::{self, mutex::Mutex, panel::Side, vec2, Align, Align2, Area, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Id, Key, LayerId, Layout, Order, Painter, Pos2, Response, RichText, Sense, SidePanel, Slider, Stroke, TextStyle, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric};
+use eframe::{egui::{self, mutex::Mutex, panel::Side, vec2, Align, Align2, Area, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Id, Key, LayerId, Layout, Order, Painter, Pos2, Response, RichText, Sense, SidePanel, Sides, Slider, Stroke, StrokeKind, TextStyle, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric};
 use egui_dnd::Dnd;
 use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
@@ -48,7 +48,7 @@ pub enum PolesPosition {
 macro_rules! check_changed {
     ($action:expr; $($resp:expr;)*) => {
         if [$(
-            $resp.changed,
+            $resp.changed(),
         )*]
         .iter()
         .any(|&v| v) {
@@ -64,45 +64,48 @@ impl HanoiApp {
         TopBottomPanel::top("top panel")
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.heading(APP_NAME);
-                
-                ui.separator();
-
-                // put the rest on the right or something
-
-                ui.separator();
-
-                self.share_button(ui);
-
-                ui.vertical(|ui| {
-                    self.draw_state(ui);
+                let cursor = ui.cursor();
+                ui.allocate_ui_at_rect(egui::Rect::from_two_pos(Pos2::new(0.0, 0.0), Pos2::new(ctx.screen_rect().size().x, cursor.max.y)), |ui| {
+                    Sides::new().show(
+                        ui,
+                        |ui| {
+                            ui.heading(APP_NAME);
+                        },
+                        |ui| {
+                            ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                                if ui.button("Infos").clicked() {
+                                    self.infos_panel = !self.infos_panel;
+                                }
+        
+                                if ui.button("Input display").clicked() {
+                                    self.input_display_window = !self.input_display_window;
+                                }
+        
+                                if ui.button("Replays").clicked() {
+                                    self.replays_window = !self.replays_window;
+                                }
+        
+                                if ui.button("Settings").clicked() {
+                                    self.settings_window = !self.settings_window;
+                                }
+        
+                                if ui.button(format!("Reset ({:?})", self.reset_key)).clicked() {
+                                    self.soft_reset();
+                                }
+        
+                                if ui.button(format!("Undo ({:?})", self.undo_key)).clicked() && matches!((&self.player, &self.state), (PlayerKind::Human, GameState::Playing(_))) {
+                                    self.undo_move();
+                                }
+        
+                                ui.separator();
+                                
+                                self.draw_state(ui);
+                                
+                                self.share_button(ui);
+                            });
+                        },
+                    );
                 });
-
-                ui.separator();
-                
-                if ui.button(format!("Undo ({:?})", self.undo_key)).clicked() && matches!((&self.player, &self.state), (PlayerKind::Human, GameState::Playing(_))) {
-                    self.undo_move();
-                }
-
-                if ui.button(format!("Reset ({:?})", self.reset_key)).clicked() {
-                    self.soft_reset();
-                }
-
-                if ui.button("Settings").clicked() {
-                    self.settings_window = !self.settings_window;
-                }
-
-                if ui.button("Replays").clicked() {
-                    self.replays_window = !self.replays_window;
-                }
-
-                if ui.button("Input display").clicked() {
-                    self.input_display_window = !self.input_display_window;
-                }
-
-                if ui.button("Infos").clicked() {
-                    self.infos_panel = !self.infos_panel;
-                }
             });
         });
     }
@@ -222,7 +225,7 @@ impl HanoiApp {
     pub fn draw_pole_hover(&mut self, ui: &mut Ui, pole: &Response, pointer_pos: Pos2) {
         if pole.rect.contains(pointer_pos) {
             Painter::new(ui.ctx().clone(), LayerId::background(), pole.rect)
-                .rect(pole.rect, 20.0, Color32::from_black_alpha(16), Stroke::NONE);
+                .rect(pole.rect, 20.0, Color32::from_black_alpha(16), Stroke::NONE, StrokeKind::Middle);
         }
     }
 
@@ -322,7 +325,7 @@ impl HanoiApp {
     pub fn draw_state(&mut self, ui: &mut egui::Ui) {
         puffin::profile_function!();
 
-        ui.label(match self.state {
+        let mut state = match self.state {
             GameState::Reset => "Not started".to_string(),
             GameState::Playing(start) => format!("{:.3?} seconds", start.elapsed().as_secs_f64()),
             GameState::Finished(duration) => {
@@ -330,8 +333,9 @@ impl HanoiApp {
                 let small_time = if seconds < 0.001 { format!("({:?})", duration) } else { "".to_string() };
                 format!("{seconds:.3?} seconds {small_time}")
             },
-        });
-        ui.label(format!("Moves: {}/{} optimal", self.moves, self.hanoi.required_moves()));
+        };
+        state.push_str(&format!("\nMoves: {}/{} optimal", self.moves, self.hanoi.required_moves()));
+        ui.label(state);
     }
 
     pub fn draw_settings_window(&mut self, ctx: &egui::Context) {
@@ -354,7 +358,7 @@ impl HanoiApp {
                     ui.add(Slider::new(&mut self.hanoi.disks_count, 1..=max_disks).text("Disks"));
                     {
                         let resp = ui.add(Slider::new(&mut self.hanoi.poles_count, 2..=max_poles).text("Poles"));
-                        if resp.changed {
+                        if resp.changed() {
                             self.hanoi.start_pole = self.hanoi.start_pole.min(self.hanoi.poles_count);
                         }
                         resp
@@ -562,7 +566,7 @@ impl HanoiApp {
             ui.add(Slider::new(&mut self.replays_filter.disks, 1..=max_disks).text("Disks"));
             {
                 let resp = ui.add(Slider::new(&mut self.replays_filter.poles, 2..=max_poles).text("Poles"));
-                if resp.changed {
+                if resp.changed() {
                     self.replays_filter.start_pole = self.replays_filter.start_pole.min(self.replays_filter.poles);
                 }
                 resp
@@ -763,9 +767,7 @@ impl HanoiApp {
                         .trim_end()
                 );
 
-                ui.output_mut(|output| {
-                    output.copied_text = share_text.to_string();
-                });
+                ui.ctx().copy_text(share_text);
     
                 *LAST_SHARE.lock() = Instant::now();
             }
