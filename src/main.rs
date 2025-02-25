@@ -10,7 +10,7 @@ use highscores::{Header, Highscores};
 use play::{PlayerKind, HUMAN_PLAY};
 use profiling::enable_profiling;
 use serde::{Deserialize, Serialize};
-use hanoi::{HanoiGame, MAX_POLES};
+use hanoi::{HanoiGame, MAX_DISKS_NORMAL, MAX_POLES};
 use serde_with::{serde_as, DefaultOnError};
 use util::*;
 
@@ -184,6 +184,7 @@ impl HanoiApp {
             Box::new(|cc| Ok(
                 Box::new(if let Some(storage) = cc.storage {
                     let mut app = eframe::get_value::<HanoiApp>(storage, eframe::APP_KEY).unwrap_or_default();
+                    app.hanoi.disks_count = app.hanoi.disks_count.min(MAX_DISKS_NORMAL);
                     app.soft_reset();
                     app
                 } else {
