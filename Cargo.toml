@@ -2,7 +2,7 @@
 name = "hanoi-speedrapp"
 description = "Tower of Hanoi desktop app for speedrunning"
 repository = "https://github.com/SpeckyYT/hanoi-speedrapp"
-version = "0.4.3"
+version = "0.4.4"
 edition = "2021"
 license = "AGPL-3.0-or-later"
 
