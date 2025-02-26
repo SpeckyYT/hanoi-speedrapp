@@ -1,6 +1,6 @@
 use std::{fmt::Debug, sync::Arc, time::{Duration, Instant}};
 
-use eframe::{egui::{self, mutex::Mutex, panel::Side, vec2, Align, Align2, Area, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Id, Key, LayerId, Layout, Order, Painter, Pos2, Response, RichText, Sense, SidePanel, Sides, Slider, Stroke, StrokeKind, TextStyle, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric};
+use eframe::{egui::{self, mutex::Mutex, panel::Side, vec2, Align, Align2, Area, CentralPanel, Color32, ComboBox, Direction, DragValue, Event, FontId, Id, Key, LayerId, Layout, Order, Painter, Pos2, Response, RichText, Sense, SidePanel, Sides, Slider, Stroke, StrokeKind, TextStyle, Theme, TopBottomPanel, Ui, Vec2, Window}, emath::Numeric};
 use egui_dnd::Dnd;
 use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
@@ -389,6 +389,17 @@ impl HanoiApp {
             ui.checkbox(&mut self.reset_on_invalid_move, "Reset on invalid move");
 
             ui.add_space(10.0);
+
+            let emoji = match ctx.theme() {
+                Theme::Dark => '☀',
+                Theme::Light => '🌙',
+            };
+            if ui.button(format!("Change app theme: {emoji}")).clicked() {
+                ctx.set_theme(match ctx.theme() {
+                    Theme::Dark => Theme::Light,
+                    Theme::Light => Theme::Dark,
+                });
+            }
 
             set_enum_setting(ui, &mut self.color_theme);
             set_enum_setting(ui, &mut self.poles_position);
