@@ -15,7 +15,7 @@ impl Play for SwiftKeys {
     fn context_play(&mut self, app: &mut crate::HanoiApp, ctx: &eframe::egui::Context) {
         ctx.input(|input| {
             SWIFT_KEYS.iter().enumerate().for_each(|(i, k)| {
-                if input.key_pressed(*k) {
+                if i < app.hanoi.poles_count && input.key_pressed(*k) {
                     app.swift_pole = match app.swift_pole {
                         None => Some(i),
                         Some(from) => {
