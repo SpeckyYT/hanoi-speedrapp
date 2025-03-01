@@ -6,7 +6,7 @@ use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
 use strum::IntoEnumIterator;
 
-use crate::{display::DEFAULT_HANOI_APP, hanoi::{MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, play::PlayerKind, GameState, HanoiApp};
+use crate::{display::DEFAULT_HANOI_APP, hanoi::{MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, play::{PlayerKind, HUMAN_PLAY}, GameState, HanoiApp};
 
 const DEFAULT_QUICK_KEY: (Key, usize, usize) = (Key::Space, 1, 2);
 
@@ -90,6 +90,10 @@ impl HanoiApp {
             set_enum_setting(ui, &mut self.poles_position);
     
             ui.add_space(10.0);
+
+            for (enabled, hp) in &mut *HUMAN_PLAY.lock() {
+                ui.checkbox(enabled, hp.title());
+            }
 
             ui.collapsing("Hotkeys", |ui| {
                 puffin::profile_scope!("hotkeys_settings");

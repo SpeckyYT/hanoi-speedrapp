@@ -12,6 +12,7 @@ pub const SWIFT_KEYS: &[Key] = &[
 pub struct SwiftKeys {}
 
 impl Play for SwiftKeys {
+    fn title(&self) -> &'static str { "Swift Keys" }
     fn context_play(&mut self, app: &mut crate::HanoiApp, ctx: &eframe::egui::Context) {
         ctx.input(|input| {
             SWIFT_KEYS.iter().enumerate().for_each(|(i, k)| {

@@ -207,7 +207,7 @@ impl App for HanoiApp {
 
         match self.player {
             PlayerKind::Human => {
-                (*HUMAN_PLAY).lock().iter_mut().for_each(|p| p.context_play(self, ctx));
+                (*HUMAN_PLAY).lock().iter_mut().filter(|(e,_)| *e).for_each(|(_,p)| p.context_play(self, ctx));
                 match self.state {
                     GameState::Playing(start) if self.hanoi.finished() => {
                         let elapsed = start.elapsed();

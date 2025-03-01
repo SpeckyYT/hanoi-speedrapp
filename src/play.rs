@@ -19,6 +19,7 @@ pub enum PlayerKind {
 }
 
 pub trait Play {
+    fn title(&self) -> &'static str;
     fn context_play(&mut self, _app: &mut HanoiApp, _ctx: &egui::Context) {}
     fn poles_play(&mut self, _app: &mut HanoiApp, _poles: &PolesVec<Response>, _pointer_pos: Option<Pos2>) {}
     fn reset(&mut self, _app: &mut HanoiApp) {}
@@ -32,6 +33,11 @@ macro_rules! human_play {
             $($struct($mod::$struct),)*
         }
         impl HumanPlay {
+            pub fn title(&self) -> &'static str {
+                match self {
+                    $(HumanPlay::$struct(play) => play.title(),)*
+                }
+            }
             pub fn context_play(&mut self, app: &mut HanoiApp, ctx: &egui::Context) {
                 match self {
                     $(HumanPlay::$struct(play) => play.context_play(app, ctx),)*
@@ -48,10 +54,10 @@ macro_rules! human_play {
                 }
             }
         }
-        pub static HUMAN_PLAY: Lazy<Arc<Mutex<[HumanPlay; [$(stringify!($mod),)*].len()]>>> = Lazy::new(|| Arc::new(Mutex::new(
+        pub static HUMAN_PLAY: Lazy<Arc<Mutex<[(bool, HumanPlay); [$(stringify!($mod),)*].len()]>>> = Lazy::new(|| Arc::new(Mutex::new(
             [
                 $(
-                    HumanPlay::$struct($mod::$struct::default()),
+                    (true, HumanPlay::$struct($mod::$struct::default())),
                 )*
             ]
         )));

@@ -107,7 +107,7 @@ impl HanoiApp {
                 self.draw_blindfold(ui);
             } else {
                 let poles = self.draw_poles(ui, pointer_pos);
-                (*HUMAN_PLAY).lock().iter_mut().for_each(|p| p.poles_play(self, &poles, pointer_pos));
+                (*HUMAN_PLAY).lock().iter_mut().filter(|(e,_)| *e).for_each(|(_, p)| p.poles_play(self, &poles, pointer_pos));
                 self.draw_dragging_disk(ui);
                 self.draw_swift_disk(ui);
             }

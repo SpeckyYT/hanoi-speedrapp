@@ -8,7 +8,7 @@ impl HanoiApp {
         self.state = GameState::Reset;
         self.player = PlayerKind::Human;
         self.moves = 0;
-        (*HUMAN_PLAY).lock().iter_mut().for_each(|p| p.reset(self));
+        (*HUMAN_PLAY).lock().iter_mut().for_each(|(_,p)| p.reset(self));
     }
 
     pub fn equal_settings(&self, other: &Self) -> bool {

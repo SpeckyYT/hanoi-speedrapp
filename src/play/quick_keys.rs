@@ -6,6 +6,7 @@ use super::{Play, PlayerKind};
 pub struct QuickKeys {}
 
 impl Play for QuickKeys {
+    fn title(&self) -> &'static str { "Quick Keys" }
     fn context_play(&mut self, app: &mut crate::HanoiApp, ctx: &eframe::egui::Context) {
         ctx.input(|i| {
             for qki in 0..app.quick_keys.len() {
