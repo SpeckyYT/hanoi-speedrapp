@@ -51,9 +51,9 @@ impl HanoiApp {
                 self.hanoi.poles[i].iter().enumerate().for_each(|(j, &disk_number)| {
                     let is_drag = self.dragging_pole == Some(i);
                     let is_swift = self.swift_pole == Some(i);
-                    let is_count = is_drag as usize + is_swift as usize;
+                    let skip_count = is_drag as usize + is_swift as usize;
 
-                    if j >= self.hanoi.poles[i].len() - is_count {
+                    if j >= self.hanoi.poles[i].len().saturating_sub(skip_count) {
                         disks_skipped += 1;
                     } else {
                         self.draw_disk(

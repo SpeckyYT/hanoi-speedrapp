@@ -1,6 +1,8 @@
 use eframe::egui::Key;
 
-use super::Play;
+use crate::GameState;
+
+use super::{Play, PlayerKind};
 
 pub const SWIFT_KEYS: &[Key] = &[
     Key::Num1, Key::Num2, Key::Num3,
@@ -14,9 +16,18 @@ pub struct SwiftKeys {}
 impl Play for SwiftKeys {
     fn title(&self) -> &'static str { "Swift Keys" }
     fn context_play(&mut self, app: &mut crate::HanoiApp, ctx: &eframe::egui::Context) {
+        if matches!(app.state, GameState::Finished(_)) || matches!(app.player, PlayerKind::Replay(_, _)) {
+            app.swift_pole = None;
+            return;
+        }
+
         ctx.input(|input| {
             SWIFT_KEYS.iter().enumerate().for_each(|(i, k)| {
-                if i < app.hanoi.poles_count && input.key_pressed(*k) {
+                let inside_bounds = i < app.hanoi.poles_count;
+                let pole_not_empty = app.swift_pole.is_some() || !app.hanoi.poles[i].is_empty();
+                let key_pressed = input.key_pressed(*k);
+
+                if inside_bounds && pole_not_empty && key_pressed {
                     app.swift_pole = match app.swift_pole {
                         None => Some(i),
                         Some(from) => {
