@@ -68,6 +68,7 @@ human_play!{
     quick_keys => QuickKeys,
     swift_keys => SwiftKeys,
     drag_and_drop => DragAndDrop,
+    click => ClickPlay,
 }
 
 impl HanoiApp {

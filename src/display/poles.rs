@@ -18,7 +18,7 @@ impl HanoiApp {
                     .enumerate()
                     .map(|(i, ui)| {
                         ui.style_mut().spacing.item_spacing = previous_spacing;
-                        let pole = self.draw_pole(ui, i).interact(Sense::drag());
+                        let pole = self.draw_pole(ui, i).interact(Sense::click_and_drag());
                         if let Some(pointer_pos) = pointer_pos {
                             self.draw_pole_hover(ui, &pole, pointer_pos);
                         }
