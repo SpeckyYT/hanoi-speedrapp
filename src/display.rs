@@ -172,8 +172,23 @@ impl HanoiApp {
                 // todo: these two should update depending on the settings
                 ui.label("Your goal is to move all disks to a different pole.");
                 ui.label("You can only move one disk at a time, and you cannot place a larger disk on top of a smaller one.");
-                // todo: maybe add a trait for different inputs, so that this updates automatically
-                ui.label("There are three ways to control this game.");
+
+                ui.add_space(10.0);
+
+                let human_play = HUMAN_PLAY.lock();
+                let playstyles = human_play.iter().filter(|(b,_)| *b);
+                let playstyles_count = playstyles.clone().count();
+                let english_number = num_to_words::integer_to_en_us(playstyles_count as isize).unwrap_or("zero".to_string());
+
+                ui.label(format!("There are {english_number} ways to control this game:", ));
+
+                ui.add_space(5.0);
+
+                for (_, playstyle) in playstyles {
+                    ui.label(format!("{}: {}", playstyle.title(), playstyle.description()));
+                }
+
+                ui.add_space(10.0);
 
                 ui.horizontal_wrapped(|ui| {
                     ui.label("Join the developer's");

@@ -20,6 +20,7 @@ pub enum PlayerKind {
 
 pub trait Play {
     fn title(&self) -> &'static str;
+    fn description(&self) -> &'static str;
     fn context_play(&mut self, _app: &mut HanoiApp, _ctx: &egui::Context) {}
     fn poles_play(&mut self, _app: &mut HanoiApp, _poles: &PolesVec<Response>, _pointer_pos: Option<Pos2>) {}
     fn reset(&mut self, _app: &mut HanoiApp) {}
@@ -36,6 +37,11 @@ macro_rules! human_play {
             pub fn title(&self) -> &'static str {
                 match self {
                     $(HumanPlay::$struct(play) => play.title(),)*
+                }
+            }
+            pub fn description(&self) -> &'static str {
+                match self {
+                    $(HumanPlay::$struct(play) => play.description(),)*
                 }
             }
             pub fn context_play(&mut self, app: &mut HanoiApp, ctx: &egui::Context) {

@@ -15,6 +15,9 @@ pub struct SwiftKeys {}
 
 impl Play for SwiftKeys {
     fn title(&self) -> &'static str { "Swift Keys" }
+    fn description(&self) -> &'static str {
+        "Press the numbers on the numpad to select a pole, select another pole, and it will move the disk from the first pole to the second."
+    }
     fn context_play(&mut self, app: &mut crate::HanoiApp, ctx: &eframe::egui::Context) {
         if matches!(app.state, GameState::Finished(_)) || matches!(app.player, PlayerKind::Replay(_, _)) {
             app.swift_pole = None;

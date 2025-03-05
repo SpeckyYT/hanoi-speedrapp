@@ -7,6 +7,9 @@ pub struct QuickKeys {}
 
 impl Play for QuickKeys {
     fn title(&self) -> &'static str { "Quick Keys" }
+    fn description(&self) -> &'static str {
+        "Press a key on the keyboard to move a disk from one pole to another. Check the `Hotkeys` in the settings."
+    }
     fn context_play(&mut self, app: &mut crate::HanoiApp, ctx: &eframe::egui::Context) {
         ctx.input(|i| {
             for qki in 0..app.quick_keys.len() {
