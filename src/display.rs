@@ -1,6 +1,6 @@
 use std::{fmt::Debug, sync::Arc, time::{Duration, Instant}};
 
-use eframe::egui::{self, mutex::Mutex, panel::Side, CentralPanel, Color32, Layout, Pos2, SidePanel, Sides, TextStyle, TopBottomPanel, Ui};
+use eframe::egui::{self, mutex::Mutex, panel::Side, CentralPanel, Color32, Layout, Pos2, RichText, SidePanel, Sides, TextStyle, TopBottomPanel, Ui};
 use indoc::formatdoc;
 use once_cell::sync::Lazy;
 use pretty_duration::pretty_duration;
@@ -185,7 +185,11 @@ impl HanoiApp {
                 ui.add_space(5.0);
 
                 for (_, playstyle) in playstyles {
-                    ui.label(format!("{}: {}", playstyle.title(), playstyle.description()));
+                    ui.horizontal_wrapped(|ui| {
+                        ui.spacing_mut().item_spacing.x = 0.0;
+                        ui.label(RichText::new(playstyle.title()).strong());
+                        ui.label(format!(": {}", playstyle.description()));
+                    });
                 }
 
                 ui.add_space(10.0);
