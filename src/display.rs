@@ -1,6 +1,6 @@
 use std::{fmt::Debug, sync::Arc, time::{Duration, Instant}};
 
-use eframe::egui::{self, mutex::Mutex, panel::Side, CentralPanel, Color32, Layout, Pos2, RichText, SidePanel, Sides, TextStyle, TopBottomPanel, Ui};
+use eframe::egui::{self, mutex::Mutex, panel::Side, CentralPanel, Color32, Layout, RichText, SidePanel, Sides, TextStyle, TopBottomPanel, Ui};
 use indoc::formatdoc;
 use once_cell::sync::Lazy;
 use pretty_duration::pretty_duration;
@@ -49,50 +49,47 @@ impl HanoiApp {
 
         TopBottomPanel::top("top panel")
         .show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                let cursor = ui.cursor();
-                ui.allocate_ui_at_rect(egui::Rect::from_two_pos(Pos2::new(0.0, 0.0), Pos2::new(ctx.screen_rect().size().x, cursor.max.y)), |ui| {
-                    Sides::new().show(
-                        ui,
-                        |ui| {
-                            ui.heading(APP_NAME);
-                        },
-                        |ui| {
-                            ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                                if ui.button("Infos").clicked() {
-                                    self.infos_panel = !self.infos_panel;
-                                }
-        
-                                if ui.button("Input display").clicked() {
-                                    self.input_display_window = !self.input_display_window;
-                                }
-        
-                                if ui.button("Replays").clicked() {
-                                    self.replays_window = !self.replays_window;
-                                }
-        
-                                if ui.button("Settings").clicked() {
-                                    self.settings_window = !self.settings_window;
-                                }
-        
-                                if ui.button(format!("Reset ({:?})", self.reset_key)).clicked() {
-                                    self.soft_reset();
-                                }
-        
-                                if ui.button(format!("Undo ({:?})", self.undo_key)).clicked() && matches!((&self.player, &self.state), (PlayerKind::Human, GameState::Playing(_))) {
-                                    self.undo_move();
-                                }
-        
-                                ui.separator();
-                                
-                                self.draw_state(ui);
-                                
-                                self.share_button(ui);
-                            });
-                        },
-                    );
-                });
-            });
+            Sides::new().show(
+                ui,
+                |ui| {
+                    ui.horizontal(|ui| {
+                        ui.heading(APP_NAME);
+                    });
+                },
+                |ui| {
+                    ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui.button("Infos").clicked() {
+                            self.infos_panel = !self.infos_panel;
+                        }
+
+                        if ui.button("Input display").clicked() {
+                            self.input_display_window = !self.input_display_window;
+                        }
+
+                        if ui.button("Replays").clicked() {
+                            self.replays_window = !self.replays_window;
+                        }
+
+                        if ui.button("Settings").clicked() {
+                            self.settings_window = !self.settings_window;
+                        }
+
+                        if ui.button(format!("Reset ({:?})", self.reset_key)).clicked() {
+                            self.soft_reset();
+                        }
+
+                        if ui.button(format!("Undo ({:?})", self.undo_key)).clicked() && matches!((&self.player, &self.state), (PlayerKind::Human, GameState::Playing(_))) {
+                            self.undo_move();
+                        }
+
+                        ui.separator();
+                        
+                        self.draw_state(ui);
+                        
+                        self.share_button(ui);
+                    });
+                },
+            );
         });
     }
 
