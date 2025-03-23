@@ -4,7 +4,7 @@ use crate::GameState;
 
 use super::{Play, PlayerKind};
 
-pub const SWIFT_KEYS: &[Key] = &[
+pub const SWIFT_KEYS: [Key; 9] = [
     Key::Num1, Key::Num2, Key::Num3,
     Key::Num4, Key::Num5, Key::Num6,
     Key::Num7, Key::Num8, Key::Num9,

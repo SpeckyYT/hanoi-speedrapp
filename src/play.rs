@@ -28,7 +28,7 @@ pub trait Play {
 
 macro_rules! human_play {
     ($($mod:ident => $struct:ident,)*) => {
-        $(mod $mod;)*
+        $(pub mod $mod;)*
 
         pub enum HumanPlay {
             $($struct($mod::$struct),)*

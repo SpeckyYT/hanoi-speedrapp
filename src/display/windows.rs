@@ -6,7 +6,7 @@ use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
 use strum::IntoEnumIterator;
 
-use crate::{display::DEFAULT_HANOI_APP, hanoi::{MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, play::{PlayerKind, HUMAN_PLAY}, GameState, HanoiApp};
+use crate::{display::DEFAULT_HANOI_APP, hanoi::{MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, play::{swift_keys::SWIFT_KEYS, PlayerKind, HUMAN_PLAY}, GameState, HanoiApp};
 
 const DEFAULT_QUICK_KEY: (Key, usize, usize) = (Key::Space, 1, 2);
 
@@ -164,17 +164,23 @@ impl HanoiApp {
             .open(&mut input_display_window)
             .auto_sized()
             .show(ctx, |ui| {
-                let (qk, reset, undo) = ctx.input(|i| {
+                let (qk, sk, reset, undo) = ctx.input(|i| {
                     (
-                        self.quick_keys.iter().map(|(key, _, _)| i.key_down(*key)).collect::<Vec<bool>>(),
+                        self.quick_keys.iter().map(|&qk| (i.key_down(qk.0), qk)).collect::<Vec<_>>(),
+                        SWIFT_KEYS.map(|key| (i.key_down(key), key)),
                         i.key_down(self.reset_key),
                         i.key_down(self.undo_key),
                     )
                 });
 
                 ui.horizontal_wrapped(|ui| {
-                    for (i, &(key, _from, _to)) in self.quick_keys.iter().enumerate() {
-                        input_display_key(ui, key, qk[i]);
+                    for (pressed, (key, ..)) in qk {
+                        input_display_key(ui, key, pressed);
+                    }
+                });
+                ui.horizontal_wrapped(|ui| {
+                    for &(pressed, key) in &sk[..self.hanoi.poles_count.min(sk.len())] {
+                        input_display_key(ui, key, pressed);
                     }
                 });
                 input_display_key(ui, self.reset_key, reset);
