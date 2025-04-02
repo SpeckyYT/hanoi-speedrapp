@@ -3,14 +3,24 @@ use eframe::egui::{self, Context, Key, Modifiers, Pos2};
 use crate::{play::{PlayerKind, HUMAN_PLAY}, GameState, HanoiApp};
 
 impl HanoiApp {
-    pub fn soft_reset(&mut self) {
-        self.hanoi.reset();
-        self.state = GameState::Reset;
-        self.player = PlayerKind::Human;
-        self.moves = 0;
-        (*HUMAN_PLAY).lock().iter_mut().for_each(|(_,p)| p.reset(self));
+    #[inline]
+    pub fn prereset(&mut self) {
+        if let GameState::PreReset = self.state {
+            self.soft_reset();
+            (*HUMAN_PLAY).lock().iter_mut().for_each(|(_,p)| p.reset(self));
+            self.state = GameState::Reset;
+        }
     }
 
+    #[inline]
+    pub fn soft_reset(&mut self) {
+        self.hanoi.reset();
+        self.state = GameState::PreReset;
+        self.player = PlayerKind::Human;
+        self.moves = 0;
+    }
+
+    #[inline]
     pub fn equal_settings(&self, other: &Self) -> bool {
         self.hanoi.disks_count == other.hanoi.disks_count
             && self.hanoi.end_pole == other.hanoi.end_pole
@@ -22,6 +32,8 @@ impl HanoiApp {
             && self.disk_number == other.disk_number
             && self.player == other.player
     }
+
+    #[inline]
     pub fn check_extra_mode(&mut self, ctx: &egui::Context) {
         ctx.input(|i| {
             let modifiers = i.modifiers.contains(Modifiers::SHIFT|Modifiers::COMMAND|Modifiers::ALT);

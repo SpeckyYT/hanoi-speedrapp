@@ -41,6 +41,7 @@ enum GameState {
     Playing(Instant),
     Finished(Duration),
     #[default]
+    PreReset,
     Reset,
 }
 
@@ -204,6 +205,7 @@ impl App for HanoiApp {
         puffin::profile_function!();
 
         self.check_extra_mode(ctx);
+        self.prereset();
 
         match self.player {
             PlayerKind::Human => {

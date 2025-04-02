@@ -134,7 +134,7 @@ impl HanoiApp {
         puffin::profile_function!();
 
         let mut state = match self.state {
-            GameState::Reset => "Not started".to_string(),
+            GameState::Reset|GameState::PreReset => "Not started".to_string(),
             GameState::Playing(start) => format!("{:.3?} seconds", start.elapsed().as_secs_f64()),
             GameState::Finished(duration) => {
                 let seconds = duration.as_secs_f64();
