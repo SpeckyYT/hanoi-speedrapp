@@ -251,6 +251,7 @@ impl HanoiApp {
 
             if ui.button(button_text).clicked() {
                 let time_string = format!("{:.3?}", time_f64);
+                let time_string_undotted = time_string.chars().filter(|c| *c != '.').collect::<String>();
                 let tower_share = draw_share_tower(self.color_theme, self.poles_position);
 
                 let share_text = formatdoc!(
@@ -276,8 +277,9 @@ impl HanoiApp {
                         (self.quick_keys.len() != self.hanoi.poles_count * (self.hanoi.poles_count - 1))
                             .then_some(format!("⌨️ {} quick keys", self.quick_keys.len()).as_str()),
                         matches!(self.player, PlayerKind::Replay(_, _)).then_some("🎥 Replay"),
-                        time_string.contains("69").then_some("🤣 0 bitches"),
-                        time_string.contains("247").then_some("😱 #247"),
+                        time_string_undotted.contains("69").then_some("🤣 0 bitches"),
+                        time_string_undotted.contains("247").then_some("😱 #247"),
+                        time_string_undotted.contains("666").then_some("😈 666"),
                     ]
                         .into_iter()
                         .flatten()
