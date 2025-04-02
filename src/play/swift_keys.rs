@@ -27,12 +27,12 @@ impl Play for SwiftKeys {
         ctx.input(|input| {
             SWIFT_KEYS.iter().enumerate().for_each(|(i, k)| {
                 let inside_bounds = i < app.hanoi.poles_count;
-                let pole_not_empty = app.swift_pole.is_some() || !app.hanoi.poles[i].is_empty();
                 let key_pressed = input.key_pressed(*k);
 
-                if inside_bounds && pole_not_empty && key_pressed {
+                if inside_bounds && key_pressed {
                     app.swift_pole = match app.swift_pole {
-                        None => Some(i),
+                        None if !app.hanoi.poles[i].is_empty() => Some(i),
+                        None => None,
                         Some(from) => {
                             app.full_move(from, i);
                             app.reset_undo();

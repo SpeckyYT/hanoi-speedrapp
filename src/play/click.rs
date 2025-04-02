@@ -21,7 +21,8 @@ impl Play for ClickPlay {
         for (i, pole) in poles.iter().enumerate() {
             if pole.clicked() {
                 app.swift_pole = match app.swift_pole {
-                    None => Some(i),
+                    None if !app.hanoi.poles[i].is_empty() => Some(i),
+                    None => None,
                     Some(from) => {
                         app.full_move(from, i);
                         app.reset_undo();

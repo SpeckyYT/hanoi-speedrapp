@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Instant};
+use std::{mem::discriminant, sync::Arc, time::Instant};
 
 use eframe::egui::{self, mutex::Mutex, Pos2, Response};
 use once_cell::sync::Lazy;
@@ -107,5 +107,5 @@ impl HanoiApp {
 
 #[inline]
 pub fn is_human_play_enabled(human_play: HumanPlay) -> bool {
-    HUMAN_PLAY.lock().iter().any(|(enabled, hp)| *enabled && hp.title() == human_play.title())
+    HUMAN_PLAY.lock().iter().any(|(enabled, hp)| *enabled && discriminant(hp) == discriminant(&human_play))
 }
