@@ -91,6 +91,7 @@ impl HanoiApp {
     
             ui.add_space(10.0);
 
+            ui.label("Playstyles");
             for (enabled, hp) in &mut *HUMAN_PLAY.lock() {
                 ui.checkbox(enabled, hp.title());
             }
