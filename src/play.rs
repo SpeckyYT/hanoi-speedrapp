@@ -104,3 +104,8 @@ impl HanoiApp {
         self.undo_index = self.hanoi.moves_history.len();
     }
 }
+
+#[inline]
+pub fn is_human_play_enabled(human_play: HumanPlay) -> bool {
+    HUMAN_PLAY.lock().iter().any(|(enabled, hp)| *enabled && hp.title() == human_play.title())
+}

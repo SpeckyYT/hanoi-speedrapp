@@ -6,7 +6,7 @@ use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
 use strum::IntoEnumIterator;
 
-use crate::{display::DEFAULT_HANOI_APP, hanoi::{MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, play::{swift_keys::SWIFT_KEYS, PlayerKind, HUMAN_PLAY}, GameState, HanoiApp};
+use crate::{display::DEFAULT_HANOI_APP, hanoi::{MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, play::{is_human_play_enabled, swift_keys::SWIFT_KEYS, HumanPlay, PlayerKind, HUMAN_PLAY}, GameState, HanoiApp};
 
 const DEFAULT_QUICK_KEY: (Key, usize, usize) = (Key::Space, 1, 2);
 
@@ -173,16 +173,24 @@ impl HanoiApp {
                     )
                 });
 
-                ui.horizontal_wrapped(|ui| {
-                    for (pressed, (key, ..)) in qk {
-                        input_display_key(ui, key, pressed);
-                    }
-                });
-                ui.horizontal_wrapped(|ui| {
-                    for &(pressed, key) in &sk[..self.hanoi.poles_count.min(sk.len())] {
-                        input_display_key(ui, key, pressed);
-                    }
-                });
+                if is_human_play_enabled(HumanPlay::QuickKeys(Default::default())) {
+                    ui.horizontal_wrapped(|ui| {
+                        for (pressed, (key, ..)) in qk {
+                            input_display_key(ui, key, pressed);
+                        }
+                    });
+                }
+                if is_human_play_enabled(HumanPlay::SwiftKeys(Default::default())) {
+                    ui.horizontal_wrapped(|ui| {
+                        for &(pressed, key) in &sk[..self.hanoi.poles_count.min(sk.len())] {
+                            input_display_key(ui, key, pressed);
+                        }
+                    });
+                }
+                // todo: find a better way to do this shit
+                if is_human_play_enabled(HumanPlay::ClickPlay(Default::default())) || is_human_play_enabled(HumanPlay::DragAndDrop(Default::default())) {
+                    input_display_text(ui, "Click", ui.ctx().input(|i| i.pointer.primary_down()));
+                }
                 input_display_key(ui, self.reset_key, reset);
                 input_display_key(ui, self.undo_key, undo);
             });
@@ -391,9 +399,16 @@ where
         });
 }
 
+#[inline]
 fn input_display_key(ui: &mut Ui, key: Key, highlighted: bool) {
     puffin::profile_function!();
-    let button = ui.button(format!("{key:?}"));
+    input_display_text(ui, &format!("{key:?}"), highlighted);
+}
+
+#[inline]
+fn input_display_text(ui: &mut Ui, text: &str, highlighted: bool) {
+    puffin::profile_function!();
+    let button = ui.button(text);
     if highlighted {
         button.highlight();
     }
