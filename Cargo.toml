@@ -12,12 +12,12 @@ license = "AGPL-3.0-or-later"
 arrayvec = { version = "0.7.6", features = ["serde"] }
 cached = "0.55.1"
 chrono = { version = "0.4.40", features = ["serde"] }
-clap = { version = "4.5.35", features = ["derive"] }
-colorgrad = "0.7.0"
+clap = { version = "4.5.37", features = ["derive"] }
+colorgrad = "0.7.1"
 eframe = { version = "0.31.1", features = ["persistence", "glow"] }
 egui_dnd = "0.12.0"
 egui_extras = "0.31.1"
-egui_plot = "0.31.0"
+egui_plot = "0.32.1"
 indoc = "2.0.6"
 num-to-words = "0.1.1"
 once_cell = "1.21.3"

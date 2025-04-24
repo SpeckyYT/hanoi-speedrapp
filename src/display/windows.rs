@@ -208,6 +208,7 @@ impl HanoiApp {
             .show_axes(false)
             .data_aspect(1.0)
             .show(ui, |plot_ui| plot_ui.bar_chart(BarChart::new(
+                "Highschores",
                 match self.highscores.get(&self.replays_filter) {
                     Some(scores) =>
                         scores
