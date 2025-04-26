@@ -1,3 +1,5 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
+
 use std::time::{Duration, Instant};
 
 use arrayvec::ArrayVec;
@@ -30,7 +32,6 @@ fn main() -> Result<(), eframe::Error> {
     let cli = Cli::parse();
     if cli.profile { enable_profiling() }
     if cli.backup { backup_save() }
-    hide_console_window();
 
     HanoiApp::run(cli)
 }
@@ -256,12 +257,5 @@ fn backup_save() {
                 break;
             }
         }
-    }
-}
-
-fn hide_console_window() {
-    if !cfg!(debug_assertions) {
-        #[cfg(windows)]
-        unsafe { winapi::um::wincon::FreeConsole() };
     }
 }
