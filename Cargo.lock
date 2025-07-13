@@ -1703,7 +1703,6 @@ dependencies = [
  "egui_plot",
  "indoc",
  "num-to-words",
- "once_cell",
  "pretty-duration",
  "profiling",
  "puffin",

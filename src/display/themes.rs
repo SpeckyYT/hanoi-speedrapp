@@ -1,6 +1,7 @@
+use std::sync::LazyLock;
+
 use colorgrad::Gradient;
 use eframe::{egui::Color32, epaint::Hsva};
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
@@ -10,7 +11,7 @@ macro_rules! gradients_generator {
     {$(const $n:ident/$g:ident: $t:ident = &[ $($c:expr,)* ];)*} => {
         $(
             pub const $n: &[Color32] = &[ $($c,)* ];
-            pub static $g: Lazy<colorgrad::$t> = Lazy::new(|| {
+            pub static $g: LazyLock<colorgrad::$t> = LazyLock::new(|| {
                 let colors = $n.iter().map(|c| colorgrad::Color::from_rgba8(c.r(), c.g(), c.b(), c.a())).collect::<Vec<colorgrad::Color>>();
                 let gradient = colorgrad::GradientBuilder::new()
                     .colors(&colors)

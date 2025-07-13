@@ -1,8 +1,7 @@
-use std::{fmt::Debug, sync::Arc, time::{Duration, Instant}};
+use std::{fmt::Debug, sync::{Arc, LazyLock}, time::{Duration, Instant}};
 
 use eframe::egui::{self, mutex::Mutex, panel::Side, CentralPanel, Color32, Layout, RichText, SidePanel, Sides, TextStyle, TopBottomPanel, Ui};
 use indoc::formatdoc;
-use once_cell::sync::Lazy;
 use pretty_duration::pretty_duration;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
@@ -30,7 +29,7 @@ const TIME_ESTIMATIONS: &[(&str, f64)] = &[
     ("a computer", 50000000.0),
 ];
 
-static DEFAULT_HANOI_APP: Lazy<HanoiApp> = Lazy::new(|| {
+static DEFAULT_HANOI_APP: LazyLock<HanoiApp> = LazyLock::new(|| {
     let mut hanoi_app = HanoiApp::default();
     hanoi_app.soft_reset();
     hanoi_app
@@ -241,7 +240,7 @@ impl HanoiApp {
 
             let time_f64 = time.as_secs_f64();
 
-            static LAST_SHARE: Lazy<Arc<Mutex<Instant>>> = Lazy::new(|| Arc::new(Mutex::new(Instant::now() - SHARE_BUTTON_DURATION)));
+            static LAST_SHARE: LazyLock<Arc<Mutex<Instant>>> = LazyLock::new(|| Arc::new(Mutex::new(Instant::now() - SHARE_BUTTON_DURATION)));
 
             let button_text = if LAST_SHARE.lock().elapsed() < SHARE_BUTTON_DURATION {
                 "Copied to clipboard!"

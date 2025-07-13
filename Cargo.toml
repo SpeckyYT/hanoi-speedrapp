@@ -20,7 +20,6 @@ egui_extras = "0.31.1"
 egui_plot = "0.32.1"
 indoc = "2.0.6"
 num-to-words = "0.1.1"
-once_cell = "1.21.3"
 pretty-duration = "0.1.1"
 profiling = { version = "1.0.16", features = ["profile-with-puffin"] }
 puffin = "0.19.1"

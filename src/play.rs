@@ -1,7 +1,6 @@
-use std::{mem::discriminant, sync::Arc, time::Instant};
+use std::{mem::discriminant, sync::{Arc, LazyLock}, time::Instant};
 
 use eframe::egui::{self, mutex::Mutex, Pos2, Response};
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
@@ -60,7 +59,7 @@ macro_rules! human_play {
                 }
             }
         }
-        pub static HUMAN_PLAY: Lazy<Arc<Mutex<[(bool, HumanPlay); [$(stringify!($mod),)*].len()]>>> = Lazy::new(|| Arc::new(Mutex::new(
+        pub static HUMAN_PLAY: LazyLock<Arc<Mutex<[(bool, HumanPlay); [$(stringify!($mod),)*].len()]>>> = LazyLock::new(|| Arc::new(Mutex::new(
             [
                 $(
                     (true, HumanPlay::$struct($mod::$struct::default())),
