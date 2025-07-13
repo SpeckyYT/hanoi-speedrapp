@@ -35,6 +35,7 @@ impl HanoiApp {
 
     #[inline]
     pub fn check_extra_mode(&mut self, ctx: &egui::Context) {
+        puffin::profile_function!();
         ctx.input(|i| {
             let modifiers = i.modifiers.contains(Modifiers::SHIFT|Modifiers::COMMAND|Modifiers::ALT);
             let space = i.key_down(Key::Enter);
@@ -67,6 +68,7 @@ pub fn quick_keys() -> Vec<(Key, usize, usize)> {
 
 #[inline]
 pub fn get_cursor_position(ctx: &Context) -> Option<Pos2> {
+    puffin::profile_function!();
     ctx.input(|i| {
         let hover = i.pointer.hover_pos();
         let interact = i.pointer.interact_pos();

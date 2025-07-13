@@ -13,6 +13,7 @@ impl Play for DragAndDrop {
         "Drag and drop the disks by holding your primary mouse button on one pole and releasing it on another."
     }
     fn poles_play(&mut self, app: &mut HanoiApp, poles: &PolesVec<Response>, pointer_pos: Option<Pos2>) {
+        puffin::profile_function!();
         if matches!(app.state, GameState::Finished(_)) || matches!(app.player, PlayerKind::Replay(_, _)) {
             app.dragging_pole = None;
             return;

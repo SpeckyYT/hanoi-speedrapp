@@ -39,6 +39,7 @@ pub enum ColorTheme {
 
 impl ColorTheme {
     pub fn to_color(self, disk_number: usize, disks_count: usize) -> Color32 {
+        puffin::profile_function!();
         let modulo = |theme: &[Color32]| theme[(disk_number - 1) % theme.len()];
         let spread = |theme: &[Color32]| theme[(disk_number - 1) * theme.len() / disks_count];
         fn gradient(gradient: &impl Gradient, disk_number: usize, disks_count: usize) -> Color32 {

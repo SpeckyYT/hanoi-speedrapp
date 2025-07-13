@@ -61,11 +61,13 @@ impl HanoiGame {
         }
     }
     pub fn required_moves(&self) -> RequiredMoves {
+        puffin::profile_function!();
         if self.end_pole == Some(self.start_pole) { return RequiredMoves::Count(2) }
         if self.illegal_moves { return RequiredMoves::Count(2 * self.disks_count as u128 - 1) }
         frame_stewart(self.disks_count, self.poles_count).into()
     }
     pub fn finished(&self) -> bool {
+        puffin::profile_function!();
         let end = ArrayVec::from_iter((1..=self.disks_count).rev());
 
         if let Some(end_pole) = self.end_pole {
@@ -83,6 +85,7 @@ impl HanoiGame {
 
 #[cached]
 fn frame_stewart(disks: usize, poles: usize) -> Option<u128> {
+    puffin::profile_function!();
     match (disks, poles) {
         (0, _) => Some(0),
         (1, p) if p > 1 => Some(1),

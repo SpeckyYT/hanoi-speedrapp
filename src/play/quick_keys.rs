@@ -11,6 +11,7 @@ impl Play for QuickKeys {
         "Press a key on the keyboard to move a disk from one pole to another. Check the `Hotkeys` in the settings."
     }
     fn context_play(&mut self, app: &mut crate::HanoiApp, ctx: &eframe::egui::Context) {
+        puffin::profile_function!();
         ctx.input(|i| {
             for qki in 0..app.quick_keys.len() {
                 let (key, from, to) = app.quick_keys[qki];

@@ -88,6 +88,7 @@ impl HanoiApp {
     }
 
     pub fn calculate_disk_size(&self, disk_number: usize, max_width: f32, disk_height: f32) -> Vec2 {
+        puffin::profile_function!();
         let width_step = (max_width - DISK_WIDTH_MIN) / self.hanoi.disks_count as f32;
         let width = DISK_WIDTH_MIN + disk_number as f32 * width_step;
         Vec2::new(
@@ -158,6 +159,7 @@ impl HanoiApp {
     }
 
     pub fn draw_swift_disk(&mut self, ui: &mut Ui) {
+        puffin::profile_function!();
         // todo: this is turning into a copy and paste hell, multiple ways of playing should become modular
         if let Some(from) = self.swift_pole {
             if let Some(&disk_number) = self.hanoi.poles[from].last() {

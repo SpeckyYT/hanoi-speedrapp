@@ -13,6 +13,7 @@ impl Play for ClickPlay {
         "Click on a pole to select it, then click on another pole to move the disk to it."
     }
     fn poles_play(&mut self, app: &mut HanoiApp, poles: &PolesVec<Response>, _pointer_pos: Option<Pos2>) {
+        puffin::profile_function!();
         if matches!(app.state, GameState::Finished(_)) || matches!(app.player, PlayerKind::Replay(_, _)) {
             app.swift_pole = None;
             return;

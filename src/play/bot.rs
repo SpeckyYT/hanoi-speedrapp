@@ -4,6 +4,7 @@ use crate::{GameState, HanoiApp};
 
 impl HanoiApp {
     pub fn bot_play(&mut self) {
+        puffin::profile_function!();
         if self.state == GameState::Reset {
             let start_time = Instant::now();
             self.state = GameState::Playing(start_time);
