@@ -165,10 +165,15 @@ impl HanoiApp {
             .open(&mut input_display_window)
             .auto_sized()
             .show(ctx, |ui| {
-                let (qk, sk, reset, undo) = ctx.input(|i| {
+                let (
+                    qk, sk,
+                    p_down, p_drag,
+                    reset, undo
+                ) = ctx.input(|i| {
                     (
                         self.quick_keys.iter().map(|&qk| (i.key_down(qk.0), qk)).collect::<Vec<_>>(),
                         SWIFT_KEYS.map(|key| (i.key_down(key), key)),
+                        i.pointer.any_down(), i.pointer.is_decidedly_dragging(),
                         i.key_down(self.reset_key),
                         i.key_down(self.undo_key),
                     )
@@ -181,6 +186,7 @@ impl HanoiApp {
                         }
                     });
                 }
+
                 if is_human_play_enabled(HumanPlay::SwiftKeys(Default::default())) {
                     ui.horizontal_wrapped(|ui| {
                         for &(pressed, key) in &sk[..self.hanoi.poles_count.min(sk.len())] {
@@ -188,10 +194,20 @@ impl HanoiApp {
                         }
                     });
                 }
-                // todo: find a better way to do this shit
-                if is_human_play_enabled(HumanPlay::ClickPlay(Default::default())) || is_human_play_enabled(HumanPlay::DragAndDrop(Default::default())) {
-                    input_display_text(ui, "Click", ui.ctx().input(|i| i.pointer.primary_down()));
+
+                let click_play = is_human_play_enabled(HumanPlay::ClickPlay(Default::default()));
+                let drag_and_drop_play = is_human_play_enabled(HumanPlay::DragAndDrop(Default::default()));
+                if click_play || drag_and_drop_play {
+                    ui.horizontal_wrapped(|ui| {
+                        if click_play {
+                            input_display_text(ui, "Click", p_down);
+                        }
+                        if drag_and_drop_play {
+                            input_display_text(ui, "Dragging", p_drag);
+                        }
+                    });
                 }
+
                 input_display_key(ui, self.reset_key, reset);
                 input_display_key(ui, self.undo_key, undo);
             });
