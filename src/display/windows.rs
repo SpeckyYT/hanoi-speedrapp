@@ -217,21 +217,58 @@ impl HanoiApp {
 
 
     pub fn draw_highscores_graph(&mut self, ui: &mut Ui) {
+        const MIN_DIVISIONS: u32 = 25;
+        const MAX_DELTA: f64 = 1.0;
+
         puffin::profile_function!();
 
         egui_plot::Plot::new("highscores_plot")
-            .height(128.0)
-            .show_axes(false)
-            .data_aspect(1.0)
+            .height(256.0)
+            .show_axes(true)
+            .allow_scroll(false)
+            .allow_drag(false)
+            .allow_zoom(false)
+            .allow_axis_zoom_drag(false)
+            .allow_boxed_zoom(false)
+            .x_axis_formatter(|fmt, _| format!("{:.3?}s", fmt.value))
             .show(ui, |plot_ui| plot_ui.bar_chart(BarChart::new(
                 "Highschores",
                 match self.highscores.get(&self.replays_filter) {
-                    Some(scores) =>
-                        scores
-                            .iter()
-                            .enumerate()
-                            .map(|(i, score)| Bar::new((i + 1) as f64, score.time.as_secs_f64()))
-                            .collect(),
+                    Some(scores) => {
+                        if let Some(last) = scores.last() {
+                            let time_delta = (last.time / MIN_DIVISIONS).as_secs_f64();
+                            let delta = time_delta.min(MAX_DELTA);
+                            let divisions = (last.time.as_secs_f64() / delta).ceil() as usize;
+
+                            let mut bars: Vec<u32> = vec![0; divisions];
+                            let mut scores_iter = scores.iter().peekable();
+
+                            for i in 0..divisions {
+                                while let Some(score) = scores_iter.peek() {
+                                    let is_last = i == divisions - 1;
+                                    let is_in_time_section = score.time.as_secs_f64() <= i as f64 * delta;
+                                    if is_last || is_in_time_section {
+                                        bars[i as usize] += 1;
+                                        let _ = scores_iter.next();
+                                    } else {
+                                        break
+                                    }
+                                }
+                            }
+
+                            bars.into_iter().enumerate()
+                                .map(|(i, g)| {
+                                    let current_time = i as f64 * delta;
+                                    let next_time = (i + 1) as f64 * delta;
+                                    Bar::new(current_time, g as f64).name(format!("{current_time:.3?}-{next_time:.3?}")).width(next_time - current_time)
+                                })
+                                .collect()
+
+                            // TODO: this process above could probably be optimized by only looping once over the scores/bars
+                        } else {
+                            vec![]
+                        }
+                    },
                     None => vec![],
                 }
             )));

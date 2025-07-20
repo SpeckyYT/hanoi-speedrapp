@@ -19,6 +19,7 @@ egui_dnd = "0.13.0"
 egui_extras = "0.32.0"
 egui_plot = "0.33.0"
 indoc = "2.0.6"
+itertools = "0.14.0"
 num-to-words = "0.1.1"
 pretty-duration = "0.1.1"
 profiling = { version = "1.0.17", features = ["profile-with-puffin"] }
