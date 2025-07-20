@@ -253,6 +253,36 @@ impl HanoiApp {
                 let time_string_undotted = time_string.chars().filter(|c| *c != '.').collect::<String>();
                 let tower_share = draw_share_tower(self.color_theme, self.poles_position);
 
+                macro_rules! joined_option_string {
+                    ($($e:expr,)*) => {{
+                        let mut string = String::new();
+                        $(
+                            if let Some(value) = $e {
+                                string.push_str(&value);
+                                string.push('\n');
+                            }
+                        )*
+                        if ![$([$e].len()),*].is_empty() {
+                            string.pop();
+                        }
+                        string
+                    }};
+                }
+
+                let extra_text = joined_option_string![
+                    (!is_optimal).then_some(format!("🚗 {:.2?} moves/second", self.moves as f64 / time_f64)),
+                    (self.hanoi.poles_count != 3).then_some(format!("🗼 {} poles", self.hanoi.poles_count)),
+                    is_optimal.then_some("💯 Optimal solution"),
+                    self.blindfold.then_some("😎 Blindfolded"),
+                    self.hanoi.illegal_moves.then_some("👮 Illegal moves"),
+                    (self.quick_keys.len() != self.hanoi.poles_count * (self.hanoi.poles_count - 1))
+                        .then_some(format!("⌨️ {} quick keys", self.quick_keys.len())),
+                    match self.player { PlayerKind::Replay(ref replay, _) => Some(replay.date.format("🎥 Replay (%Y-%m-%d %H:%M:%S)").to_string()), _ => None },
+                    time_string_undotted.contains("69").then_some("🤣 0 bitches"),
+                    time_string_undotted.contains("247").then_some("😱 #247"),
+                    time_string_undotted.contains("666").then_some("😈 666"),
+                ];
+
                 let share_text = formatdoc!(
                     "
                         {tower_share}
@@ -261,33 +291,12 @@ impl HanoiApp {
                         ⏱️ {} seconds
                         🎲 {}/{} moves
                         🏎️ {:.2?}{} moves/second
-                        {}
+                        {extra_text}
                     ",
                     self.hanoi.disks_count,
                     time_string,
                     self.moves, required_moves,
                     required_moves as f64 / time_f64, if is_optimal { "" } else { " optimal" }, // yes this is intended
-                    [
-                        (!is_optimal).then_some(format!("🚗 {:.2?} moves/second", self.moves as f64 / time_f64).as_str()),
-                        (self.hanoi.poles_count != 3).then_some(format!("🗼 {} poles", self.hanoi.poles_count).as_str()),
-                        is_optimal.then_some("💯 Optimal solution"),
-                        self.blindfold.then_some("😎 Blindfolded"),
-                        self.hanoi.illegal_moves.then_some("👮 Illegal moves"),
-                        (self.quick_keys.len() != self.hanoi.poles_count * (self.hanoi.poles_count - 1))
-                            .then_some(format!("⌨️ {} quick keys", self.quick_keys.len()).as_str()),
-                        matches!(self.player, PlayerKind::Replay(_, _)).then_some("🎥 Replay"),
-                        time_string_undotted.contains("69").then_some("🤣 0 bitches"),
-                        time_string_undotted.contains("247").then_some("😱 #247"),
-                        time_string_undotted.contains("666").then_some("😈 666"),
-                    ]
-                        .into_iter()
-                        .flatten()
-                        .fold(String::new(), |mut a, b| {
-                            a += b;
-                            a += "\n";
-                            a
-                        })
-                        .trim_end()
                 );
 
                 ui.ctx().copy_text(share_text);
