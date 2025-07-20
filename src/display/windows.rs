@@ -243,12 +243,12 @@ impl HanoiApp {
                             let mut bars: Vec<u32> = vec![0; divisions];
                             let mut scores_iter = scores.iter().peekable();
 
-                            for i in 0..divisions {
+                            for (i, bar) in bars.iter_mut().enumerate().take(divisions) {
                                 while let Some(score) = scores_iter.peek() {
                                     let is_last = i == divisions - 1;
                                     let is_in_time_section = score.time.as_secs_f64() <= i as f64 * delta;
                                     if is_last || is_in_time_section {
-                                        bars[i as usize] += 1;
+                                        *bar += 1;
                                         let _ = scores_iter.next();
                                     } else {
                                         break
@@ -430,13 +430,12 @@ fn key_input(ui: &mut Ui, key: &mut Key) -> Response {
 
 fn integer_input<T: Numeric>(ui: &mut Ui, input: &mut T, extra_mode: bool) -> Response {
     puffin::profile_function!();
-    let resp = ui.add(
+    ui.add(
         DragValue::new(input)
             .speed(0.0)
             .range(0..=(if extra_mode { MAX_DISKS } else { MAX_DISKS_NORMAL }))
             .clamp_existing_to_range(true)
-    );
-    resp
+    )
 }
 
 fn set_enum_setting<T>(ui: &mut Ui, selected: &mut T)
