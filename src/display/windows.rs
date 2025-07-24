@@ -6,7 +6,7 @@ use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart};
 use strum::IntoEnumIterator;
 
-use crate::{display::DEFAULT_HANOI_APP, hanoi::{MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, play::{is_human_play_enabled, swift_keys::SWIFT_KEYS, HumanPlay, PlayerKind, HUMAN_PLAY}, GameState, HanoiApp};
+use crate::{display::DEFAULT_HANOI_APP, hanoi::{MAX_DISKS, MAX_DISKS_NORMAL, MAX_POLES, MAX_POLES_NORMAL}, play::{is_human_play_enabled, swift_keys::SWIFT_KEYS, HumanPlay, PlayerKind, HUMAN_PLAY}, util::consistency_score, GameState, HanoiApp};
 
 const DEFAULT_QUICK_KEY: (Key, usize, usize) = (Key::Space, 1, 2);
 
@@ -279,9 +279,10 @@ impl HanoiApp {
         
         match self.highscores.get(&self.replays_filter) {
             Some(games) if !games.is_empty() => {
-                let col_def = Column::remainder().resizable(true);
+                let col_def = Column::remainder().at_least(60.0).resizable(true);
 
                 TableBuilder::new(ui)
+                .column(col_def)
                 .column(col_def)
                 .column(col_def)
                 .column(col_def)
@@ -291,6 +292,7 @@ impl HanoiApp {
                     header.col(|ui| { ui.heading("Moves"); });
                     header.col(|ui| { ui.heading("Date"); });
                     header.col(|ui| { ui.heading("Replay"); });
+                    header.col(|ui| { ui.heading("Consistency"); });
                 })
                 .body(|body| {
                     body.rows(20.0, games.len(), |mut row| {
@@ -312,6 +314,8 @@ impl HanoiApp {
                                 self.state = GameState::Playing(Instant::now());
                             }
                         });
+                        // TODO: maybe not calculate the consistency every frame for every run
+                        row.col(|ui| { ui.label(format!("{:.3?}%", 100.0 * consistency_score(game.moves.iter().map(|m| m.0)))); });
                     });
                 });
                 

@@ -1,4 +1,7 @@
+use std::time::Duration;
+
 use eframe::egui::{self, Context, Key, Modifiers, Pos2};
+use itertools::Itertools;
 
 use crate::{play::{PlayerKind, HUMAN_PLAY}, GameState, HanoiApp};
 
@@ -74,4 +77,23 @@ pub fn get_cursor_position(ctx: &Context) -> Option<Pos2> {
         let interact = i.pointer.interact_pos();
         hover.or(interact)
     })
+}
+
+#[inline]
+pub fn consistency_score(moves: impl Iterator<Item = Duration> + Clone) -> f64 {
+    let windows_difference = moves.tuple_windows().map(|(current, next)| next.saturating_sub(current).as_secs_f64());
+    let len = windows_difference.clone().count();
+
+    if len <= 1 { return 1.0 }
+
+    let mean = windows_difference.clone().sum::<f64>() / len as f64;
+
+    let sum: f64 = windows_difference.clone()
+        .map(|difference| (difference - mean).powi(2))
+        .sum();
+    let normalized = sum / len as f64;
+    let std_dev = normalized.sqrt();
+    let raw_score = 1.0 - (std_dev / mean);
+
+    raw_score.clamp(0.0, 1.0)
 }
