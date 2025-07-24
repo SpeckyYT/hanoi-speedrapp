@@ -10,7 +10,7 @@ license = "AGPL-3.0-or-later"
 
 [dependencies]
 arrayvec = { version = "0.7.6", features = ["serde"] }
-cached = "0.55.1"
+cached = "0.56.0"
 chrono = { version = "0.4.41", features = ["serde"] }
 clap = { version = "4.5.41", features = ["derive"] }
 colorgrad = "0.7.2"
@@ -27,7 +27,7 @@ puffin = "0.19.1"
 puffin_http = "0.16.1"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_with = "3.14.0"
-strum = { version = "0.27.1", features = ["derive"] }
+strum = { version = "0.27.2", features = ["derive"] }
 
 [profile.release]
 opt-level = "s"
