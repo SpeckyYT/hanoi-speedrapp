@@ -25,7 +25,7 @@ const TIME_ESTIMATIONS: &[(&str, f64)] = &[
     ("an expert physical player", 3.0),
     ("a good virtual player", 6.0),
     ("a really good virtual player", 9.0),
-    ("an expert good virtual player", 12.0),
+    ("an expert virtual player", 12.0),
     ("a computer", 50000000.0),
 ];
 
@@ -165,9 +165,13 @@ impl HanoiApp {
                     ui.label("where the controls are optimized for speed.");
                 });
 
-                // todo: these two should update depending on the settings
-                ui.label("Your goal is to move all disks to a different pole.");
-                ui.label("You can only move one disk at a time, and you cannot place a larger disk on top of a smaller one.");
+                ui.label(format!("Your goal is to move all disks to {} pole.",
+                    match self.hanoi.end_pole == Some(self.hanoi.start_pole) {
+                        false => "a different",
+                        true => "the same", 
+                    }
+                ));
+                ui.label(format!("You can only move one disk at a time, and you can{} place a larger disk on top of a smaller one.", (!self.hanoi.illegal_moves).then_some("not").unwrap_or("")));
 
                 ui.add_space(10.0);
 
