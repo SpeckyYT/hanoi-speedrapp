@@ -171,7 +171,7 @@ impl HanoiApp {
                         true => "the same", 
                     }
                 ));
-                ui.label(format!("You can only move one disk at a time, and you can{} place a larger disk on top of a smaller one.", (!self.hanoi.illegal_moves).then_some("not").unwrap_or("")));
+                ui.label(format!("You can only move one disk at a time, and you can{} place a larger disk on top of a smaller one.", if self.hanoi.illegal_moves { "" } else { "not" }));
 
                 ui.add_space(10.0);
 
