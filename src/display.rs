@@ -276,6 +276,7 @@ impl HanoiApp {
                 let extra_text = joined_option_string![
                     (!is_optimal).then_some(format!("🚗 {:.2?} moves/second", self.moves as f64 / time_f64)),
                     (self.hanoi.poles_count != 3).then_some(format!("🗼 {} poles", self.hanoi.poles_count)),
+                    (self.hanoi.start_pole != 1).then_some(format!("🐫 #{} start pole", self.hanoi.start_pole)),
                     is_optimal.then_some("💯 Optimal solution"),
                     self.blindfold.then_some("😎 Blindfolded"),
                     self.hanoi.illegal_moves.then_some("👮 Illegal moves"),
