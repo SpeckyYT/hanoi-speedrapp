@@ -45,7 +45,7 @@ impl HanoiGame {
         if from == to { return false }
         if let Some(&from_last) = self.poles[from].last() {
             if self.illegal_moves || from_last < *self.poles[to].last().unwrap_or(&usize::MAX) {
-                let disk = self.poles[from].pop().unwrap();
+                let disk = self.poles[from].pop().expect("self.poles[from].last() was checked previously");
                 self.poles[to].push(disk);
                 return true
             }

@@ -7,7 +7,7 @@ use chrono::Datelike;
 use clap::Parser;
 use cli::Cli;
 use display::{themes::ColorTheme, PolesPosition};
-use eframe::{egui::{self, Key}, App, Frame, HardwareAcceleration, NativeOptions, APP_KEY};
+use eframe::{APP_KEY, App, Frame, HardwareAcceleration, NativeOptions, egui::{Key, Ui}};
 use highscores::{Header, Highscores};
 use play::{PlayerKind, HUMAN_PLAY};
 use profiling::enable_profiling;
@@ -202,15 +202,15 @@ impl App for HanoiApp {
         eframe::set_value(storage, eframe::APP_KEY, self);
     }
 
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut Frame) {
+    fn ui(&mut self, ui: &mut Ui, _frame: &mut Frame) {
         puffin::profile_function!();
 
-        self.check_extra_mode(ctx);
+        self.check_extra_mode(ui.ctx());
         self.prereset();
 
         match self.player {
             PlayerKind::Human => {
-                (*HUMAN_PLAY).lock().iter_mut().filter(|(e,_)| *e).for_each(|(_,p)| p.context_play(self, ctx));
+                (*HUMAN_PLAY).lock().iter_mut().filter(|(e,_)| *e).for_each(|(_,p)| p.context_play(self, ui.ctx()));
                 match self.state {
                     GameState::Playing(start) if self.hanoi.finished() => {
                         let elapsed = start.elapsed();
@@ -224,18 +224,18 @@ impl App for HanoiApp {
             PlayerKind::Replay(..) => self.replay_play(),
         };
 
-        ctx.input(|i| {
+        ui.input(|i| {
             if i.key_pressed(self.reset_key) {
                 self.soft_reset();
             }
         });
 
-        self.draw_top_bar(ctx);
-        self.draw_infos_panel(ctx);
-        self.draw_central_panel(ctx);
+        self.draw_top_bar(ui);
+        self.draw_infos_panel(ui);
+        self.draw_central_panel(ui);
 
         if matches!(self.state, GameState::Playing(_)) {
-            ctx.request_repaint();
+            ui.request_repaint();
         }
     }
 }

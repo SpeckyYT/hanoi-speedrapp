@@ -10,24 +10,24 @@ license = "AGPL-3.0-or-later"
 
 [dependencies]
 arrayvec = { version = "0.7.6", features = ["serde"] }
-cached = "0.56.0"
-chrono = { version = "0.4.41", features = ["serde"] }
-clap = { version = "4.5.41", features = ["derive"] }
-colorgrad = "0.7.2"
-eframe = { version = "0.32.0", features = ["persistence", "glow"] }
-egui_dnd = "0.13.0"
-egui_extras = "0.32.0"
-egui_plot = "0.33.0"
-indoc = "2.0.6"
+cached = "0.59.0"
+chrono = { version = "0.4.44", features = ["serde"] }
+clap = { version = "4.6.0", features = ["derive"] }
+colorgrad = "0.8.0"
+eframe = { version = "0.34.0", features = ["glow", "persistence"] }
+egui_dnd = "0.15.0"
+egui_extras = "0.34.0"
+egui_plot = "0.35.0"
+indoc = "2.0.7"
 itertools = "0.14.0"
 num-to-words = "0.1.1"
 pretty-duration = "0.1.1"
 profiling = { version = "1.0.17", features = ["profile-with-puffin"] }
-puffin = "0.19.1"
-puffin_http = "0.16.1"
-serde = { version = "1.0.219", features = ["derive"] }
-serde_with = "3.14.0"
-strum = { version = "0.27.2", features = ["derive"] }
+puffin = "0.20.0"
+puffin_http = "0.17.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_with = "3.18.0"
+strum = { version = "0.28.0", features = ["derive"] }
 
 [profile.release]
 opt-level = "s"

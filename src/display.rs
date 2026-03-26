@@ -1,6 +1,6 @@
 use std::{fmt::Debug, sync::{Arc, LazyLock}, time::{Duration, Instant}};
 
-use eframe::egui::{self, mutex::Mutex, panel::Side, CentralPanel, Color32, Layout, RichText, SidePanel, Sides, TextStyle, TopBottomPanel, Ui};
+use eframe::egui::{self, CentralPanel, Color32, Layout, Panel, RichText, Sides, TextStyle, Ui, mutex::Mutex};
 use indoc::formatdoc;
 use pretty_duration::pretty_duration;
 use serde::{Deserialize, Serialize};
@@ -43,11 +43,11 @@ pub enum PolesPosition {
 }
 
 impl HanoiApp {
-    pub fn draw_top_bar(&mut self, ctx: &egui::Context) {
+    pub fn draw_top_bar(&mut self, ui: &mut Ui) {
         puffin::profile_function!();
 
-        TopBottomPanel::top("top panel")
-        .show(ctx, |ui| {
+        Panel::top("top panel")
+        .show_inside(ui, |ui| {
             Sides::new().show(
                 ui,
                 |ui| {
@@ -92,13 +92,13 @@ impl HanoiApp {
         });
     }
 
-    pub fn draw_central_panel(&mut self, ctx: &egui::Context) {
+    pub fn draw_central_panel(&mut self, ui: &mut Ui) {
         puffin::profile_function!();
 
-        let pointer_pos = get_cursor_position(ctx);
+        let pointer_pos = get_cursor_position(ui.ctx());
 
         CentralPanel::default()
-        .show(ctx, |ui| {
+        .show_inside(ui, |ui| {
             if self.blindfold && matches!((&self.player, &self.state), (PlayerKind::Human, GameState::Playing(_))) {
                 self.draw_blindfold(ui);
             } else {
@@ -145,16 +145,16 @@ impl HanoiApp {
         ui.label(state);
     }
 
-    pub fn draw_infos_panel(&mut self, ctx: &egui::Context) {
+    pub fn draw_infos_panel(&mut self, ui: &mut Ui) {
         if !self.infos_panel { return }
 
         puffin::profile_function!();
 
-        SidePanel::new(Side::Right, "infos_panel")
-            .width_range(200.0..=600.0)
-            .default_width(600.0)
-            .show(ctx, |ui| {
-                let width = ui.fonts(|f|f.glyph_width(&TextStyle::Body.resolve(ui.style()), ' '));
+        Panel::left("infos_panel")
+            .size_range(200.0..=600.0)
+            .default_size(600.0)
+            .show_inside(ui, |ui| {
+                let width = ui.fonts_mut(|f| f.glyph_width(&TextStyle::Body.resolve(ui.style()), ' '));
                 ui.spacing_mut().item_spacing.x = width;
 
                 ui.vertical_centered(|ui| ui.heading(APP_NAME));

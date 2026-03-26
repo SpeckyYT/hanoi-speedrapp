@@ -140,7 +140,7 @@ impl HanoiApp {
             let position = ui.input(|i | i.pointer.interact_pos());
 
             if let (Some(&disk_number), Some(position)) = (self.hanoi.poles[from].last(), position) {
-                let available_size = ui.ctx().available_rect();
+                let available_size = ui.ctx().content_rect();
                 let disk_height = DISK_HEIGHT.min(available_size.height());
                 let spacing_x = ui.style_mut().spacing.item_spacing.x;
                 let max_width = available_size.width() / self.hanoi.poles_count as f32 - spacing_x * 2.0;
@@ -163,7 +163,7 @@ impl HanoiApp {
         // todo: this is turning into a copy and paste hell, multiple ways of playing should become modular
         if let Some(from) = self.swift_pole {
             if let Some(&disk_number) = self.hanoi.poles[from].last() {
-                let available_size = ui.ctx().available_rect();
+                let available_size = ui.ctx().content_rect();
                 let disk_height = DISK_HEIGHT.min(available_size.height());
                 let spacing_x = ui.style_mut().spacing.item_spacing.x;
                 let max_width = available_size.width() / self.hanoi.poles_count as f32 - spacing_x * 2.0;

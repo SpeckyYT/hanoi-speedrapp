@@ -16,7 +16,7 @@ macro_rules! gradients_generator {
                 let gradient = colorgrad::GradientBuilder::new()
                     .colors(&colors)
                     .build::<colorgrad::$t>()
-                    .unwrap();
+                    .expect("the types are correct and should never crash");
                 gradient
             });
         )*
