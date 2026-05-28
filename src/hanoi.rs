@@ -7,7 +7,7 @@ pub const MAX_POLES_NORMAL: usize = 9;
 use std::fmt::Display;
 
 use arrayvec::ArrayVec;
-use cached::proc_macro::cached;
+use cached::cached;
 use serde::{Deserialize, Serialize};
 
 use crate::highscores::Move;
