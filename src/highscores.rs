@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use eframe::egui::ahash::AHashMap;
+use ahash::AHashMap;
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 

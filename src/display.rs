@@ -47,7 +47,7 @@ impl HanoiApp {
         puffin::profile_function!();
 
         Panel::top("top panel")
-        .show_inside(ui, |ui| {
+        .show(ui, |ui| {
             Sides::new().show(
                 ui,
                 |ui| {
@@ -98,7 +98,7 @@ impl HanoiApp {
         let pointer_pos = get_cursor_position(ui.ctx());
 
         CentralPanel::default()
-        .show_inside(ui, |ui| {
+        .show(ui, |ui| {
             if self.blindfold && matches!((&self.player, &self.state), (PlayerKind::Human, GameState::Playing(_))) {
                 self.draw_blindfold(ui);
             } else {
@@ -153,7 +153,7 @@ impl HanoiApp {
         Panel::left("infos_panel")
             .size_range(200.0..=600.0)
             .default_size(600.0)
-            .show_inside(ui, |ui| {
+            .show(ui, |ui| {
                 let width = ui.fonts_mut(|f| f.glyph_width(&TextStyle::Body.resolve(ui.style()), ' '));
                 ui.spacing_mut().item_spacing.x = width;
 

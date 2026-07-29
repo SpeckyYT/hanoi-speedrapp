@@ -7,7 +7,7 @@ use chrono::Datelike;
 use clap::Parser;
 use cli::Cli;
 use display::{themes::ColorTheme, PolesPosition};
-use eframe::{APP_KEY, App, Frame, HardwareAcceleration, NativeOptions, egui::{Key, Ui}, egui_wgpu::WgpuConfiguration};
+use eframe::{APP_KEY, App, Frame, NativeOptions, egui::{Key, Ui}, egui_wgpu::WgpuConfiguration};
 use highscores::{Header, Highscores};
 use play::{PlayerKind, HUMAN_PLAY};
 use profiling::enable_profiling;
@@ -170,15 +170,17 @@ impl Default for HanoiApp {
 }
 
 impl HanoiApp {
-    pub fn run(cli: Cli) -> Result<(), eframe::Error> {
+    pub fn run(_cli: Cli) -> Result<(), eframe::Error> {
         let options = NativeOptions {
-            hardware_acceleration: HardwareAcceleration::Preferred,
-            vsync: cli.vsync,
+            // vsync: cli.vsync, // TODO: remove or check how to implement it
 
             persist_window: true,
 
             wgpu_options: WgpuConfiguration {
-                present_mode: eframe::wgpu::PresentMode::Immediate,
+                surface: eframe::SurfaceConfig {
+                    present_mode: eframe::wgpu::PresentMode::Immediate,
+                    desired_maximum_frame_latency: Some(1),
+                },
                 ..Default::default()
             },
 
